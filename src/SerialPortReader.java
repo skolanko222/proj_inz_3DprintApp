@@ -1,13 +1,12 @@
 import com.fazecast.jSerialComm.*;
-
-import java.io.InputStream;
 import java.util.logging.*;
+
 
 public class SerialPortReader implements SerialPortDataListener{
     private final SerialPort serialPort;
-    private BaseTransmHandler handler;
-    public SerialPortReader(BaseTransmHandler handler, SerialPort serialPort) {
-        this.handler = handler;
+    private boolean transmStatus = false;
+    private Logger logger = Logger.getLogger(SerialPortReader.class.getName());
+    public SerialPortReader(SerialPort serialPort) {
         this.serialPort = serialPort;
     }
 
@@ -20,8 +19,6 @@ public class SerialPortReader implements SerialPortDataListener{
     public void serialEvent(SerialPortEvent event) {
         byte[] newData = new byte[serialPort.bytesAvailable()];
         int numRead = serialPort.readBytes(newData, newData.length);
-        System.out.println("Read " + numRead + " bytes.");
-        System.out.println("Data: " + new String(newData));
         handleReceivedData(newData, numRead);
         //        InputStream in = serialPort.getInputStream();
 //        byte[] buffer = new byte[1024];
@@ -38,13 +35,20 @@ public class SerialPortReader implements SerialPortDataListener{
 
     private void handleReceivedData(byte[] buffer, int len) {
         String receivedData = new String(buffer, 0, len);
+//        logger.info("[handleReceivedData] DATA END: \n");
+        logger.fine("[handleReceivedData] Read " + buffer.length + " bytes.");
+        logger.info("[handleReceivedData] DATA START: \n" + receivedData);
         if(receivedData.contains("ok")) {
-            handler.setTransmStatus(false);
-            System.out.println("OK received");
+            setTransmStatus(false);
+            logger.info("[handleReceivedData] Received ok from printer, setting transmStatus to false.");
         }
-        else {
-            System.out.println("Received: " + receivedData);
-        }
+
+    }
+    public boolean isTransmStatus() {
+        return transmStatus;
+    }
+    public void setTransmStatus(boolean transmStatus) {
+        this.transmStatus = transmStatus;
     }
 }
 

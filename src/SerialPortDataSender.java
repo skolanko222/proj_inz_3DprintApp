@@ -1,27 +1,29 @@
 import com.fazecast.jSerialComm.*;
+import java.util.logging.Logger;
 
-import java.util.LinkedList;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 public class SerialPortDataSender implements Runnable{
     private SerialPort serialPort;
-    private BaseTransmHandler handler;
-    public ConcurrentLinkedQueue<String> commandsQueue;
+    private SerialPortReader serialPortReader;
+    private ConcurrentLinkedQueue<String> commandsQueue;
+    private static final Logger logger = Logger.getLogger(SerialPortReader.class.getName());
 
-    public SerialPortDataSender(BaseTransmHandler handler, SerialPort serialPort) {
-        this.handler = handler;
+    public SerialPortDataSender(SerialPort serialPort, SerialPortReader reader) {
         this.serialPort = serialPort;
+        this.serialPortReader = reader;
         this.commandsQueue = new ConcurrentLinkedQueue<>();
     }
     private void send(String data) {
-//        handler.setTransmStatus(true);
+//        serialPortReader.setTransmStatus(true);
         serialPort.writeBytes(data.getBytes(), data.getBytes().length);
 //        waitForDataToBeSent(); // blokowanie wątku do czasu aż dane zostaną wysłane, aby nie przepełnić bufora w drukarce
-//        handler.setTransmStatus(false);
+//        serialPortReader.setTransmStatus(false);
 
     }
     private void waitForDataToBeSent() {
-        while (handler.isTransmStatus()) {
+        while (serialPortReader.isTransmStatus()) {
+            //loguj co sekundę logger.finest("[SerialPortDataSender] Waiting for data to be sent...");
             try {
                 Thread.sleep(1);
             } catch (InterruptedException e) {
@@ -29,12 +31,16 @@ public class SerialPortDataSender implements Runnable{
             }
         }
     }
+    public void queueCommand(String command) {
+        logger.finest("[SerialPortDataSender] Command added to queue: " + command);
+        commandsQueue.add(command);
+    }
 
     @Override
     public void run() {
         while (true) {
             if (!commandsQueue.isEmpty()) {
-                System.out.println("Sending command: " + commandsQueue.peek());
+                logger.finest("[SerialPortDataSender - run] Sending command: " + commandsQueue.peek());
                 send(commandsQueue.poll());
             }
         }
