@@ -1,3 +1,5 @@
+package printer;
+
 import com.fazecast.jSerialComm.*;
 import java.util.logging.*;
 
@@ -6,6 +8,7 @@ public class SerialPortReader implements SerialPortDataListener{
     private final SerialPort serialPort;
     private boolean transmStatus = false;
     private Logger logger = Logger.getLogger(SerialPortReader.class.getName());
+
     public SerialPortReader(SerialPort serialPort) {
         this.serialPort = serialPort;
     }

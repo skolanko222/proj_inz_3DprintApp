@@ -1,3 +1,5 @@
+package printer;
+
 import com.fazecast.jSerialComm.*;
 import java.util.logging.Logger;
 
@@ -16,6 +18,7 @@ public class SerialPortDataSender implements Runnable{
     }
     private void send(String data) {
 //        serialPortReader.setTransmStatus(true);
+        logger.finest("[printer.SerialPortDataSender] Sending data via serial port: " + data);
         serialPort.writeBytes(data.getBytes(), data.getBytes().length);
 //        waitForDataToBeSent(); // blokowanie wątku do czasu aż dane zostaną wysłane, aby nie przepełnić bufora w drukarce
 //        serialPortReader.setTransmStatus(false);
@@ -23,7 +26,7 @@ public class SerialPortDataSender implements Runnable{
     }
     private void waitForDataToBeSent() {
         while (serialPortReader.isTransmStatus()) {
-            //loguj co sekundę logger.finest("[SerialPortDataSender] Waiting for data to be sent...");
+            //loguj co sekundę logger.finest("[printer.SerialPortDataSender] Waiting for data to be sent...");
             try {
                 Thread.sleep(1);
             } catch (InterruptedException e) {
@@ -32,7 +35,7 @@ public class SerialPortDataSender implements Runnable{
         }
     }
     public void queueCommand(String command) {
-        logger.finest("[SerialPortDataSender] Command added to queue: " + command);
+        logger.finest("[printer.SerialPortDataSender] Command added to queue: " + command);
         commandsQueue.add(command);
     }
 
@@ -40,7 +43,7 @@ public class SerialPortDataSender implements Runnable{
     public void run() {
         while (true) {
             if (!commandsQueue.isEmpty()) {
-                logger.finest("[SerialPortDataSender - run] Sending command: " + commandsQueue.peek());
+                logger.finest("[printer.SerialPortDataSender - run] Sending command: " + commandsQueue.peek());
                 send(commandsQueue.poll());
             }
         }

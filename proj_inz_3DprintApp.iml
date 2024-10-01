@@ -8,6 +8,9 @@
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
-    <orderEntry type="library" name="jSerialComm-2.11.0" level="project" />
+    <orderEntry type="library" exported="" name="jSerialComm-2.11.0" level="project" />
+    <orderEntry type="library" exported="" name="google.code.gson" level="project" />
+    <orderEntry type="library" name="gson-2.11.0" level="project" />
+    <orderEntry type="library" exported="" name="junit.jupiter" level="project" />
   </component>
 </module>

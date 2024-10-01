@@ -1,7 +1,6 @@
 <component name="libraryTable">
-  <library name="jSerialComm-2.11.0">
+  <library name="gson-2.11.0">
     <CLASSES>
-      <root url="jar://$PROJECT_DIR$/lib/jSerialComm-2.11.0.jar!/" />
       <root url="jar://$PROJECT_DIR$/lib/gson-2.11.0.jar!/" />
     </CLASSES>
     <JAVADOC />

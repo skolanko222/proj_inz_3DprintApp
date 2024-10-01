@@ -1,3 +1,5 @@
+package printer;
+
 import com.fazecast.jSerialComm.*;
 
 import java.io.BufferedReader;
@@ -21,15 +23,23 @@ public class BaseTransmHandler {
             FileHandler fileHandler = new FileHandler("PrinterConnection.log");
             fileHandler.setFormatter(new SimpleFormatter());
             logger.addHandler(fileHandler);
+            logger.setLevel(java.util.logging.Level.ALL);
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
-    public BaseTransmHandler(SerialPort chosenPort) {
-        this.chosenPort = chosenPort;
+    public BaseTransmHandler(SerialPort port, Integer baudRate) {
+        chosenPort = port;
         reader = new SerialPortReader(chosenPort);
         sender = new SerialPortDataSender(chosenPort, reader);
         senderThread = new Thread(sender);
+
+        // choose the port to connect to
+        logger.info("[BaseTransmHandler] Chosen port: " + chosenPort.getSystemPortName());
+        chosenPort.openPort();
+        chosenPort.setComPortParameters(baudRate, 8, 1, 0);
+        chosenPort.addDataListener(reader);
+        senderThread.start();
     }
 
 
@@ -76,38 +86,5 @@ public class BaseTransmHandler {
         }
         return command;
 
-    }
-    public static void main(String[] args) {
-        SerialPort[] ports = SerialPort.getCommPorts();
-
-        // choose the port to connect to
-        SerialPort chosenPort = ports[0];
-        logger.info("[BaseTransmHandler] Chosen port: " + chosenPort.getSystemPortName());
-        chosenPort.openPort();
-        chosenPort.setComPortParameters(9600, 8, 1, 0);
-        BaseTransmHandler handler = new BaseTransmHandler(chosenPort);
-        chosenPort.addDataListener(handler.reader);
-        handler.senderThread.start();
-
-        handler.streamFile("C:\\Users\\Szymon\\Desktop\\SCP_3DBenchy1.gcode");
-//        handler.sendCommand("G1 Y10");
-        // stwórz nowy wątek, który otworzy konsole do wpisywania komend i wysyłania ich do drukarki, stwórz klasę anonimową
-        Thread consoleThread = new Thread(() -> {
-            while (true) {
-                String command = System.console().readLine();
-                handler.sendCommand(command);
-            }
-        });
-        consoleThread.start();
-
-//        co sekundę wysyłamy zapytanie o status drukarki
-//        while (true) {
-//            try {
-//                Thread.sleep(1000);
-//                handler.sendCommand("M105");
-//            } catch (InterruptedException e) {
-//                e.printStackTrace();
-//            }
-//        }
     }
 }
