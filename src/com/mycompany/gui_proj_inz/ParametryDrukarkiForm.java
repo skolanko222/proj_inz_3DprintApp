@@ -9,6 +9,7 @@ import printer.PrinterSettings;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.File;
+import java.util.Arrays;
 import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.logging.Logger;
@@ -21,7 +22,7 @@ public class ParametryDrukarkiForm extends javax.swing.JFrame {
 
     private SerialPort[] portsList;
     private Integer[] baudRates = {9600, 19200, 38400, 57600, 115200};
-    private String settingsPath = main.Main.DEFAULT_PROFILE_PATH;
+    private String settingsPath = PrinterSettings.DEFAULT_PROFILE_PATH;
 
     private PrinterSettings chosenSettingsProfile = new PrinterSettings(9600, null);
     /**
@@ -29,15 +30,24 @@ public class ParametryDrukarkiForm extends javax.swing.JFrame {
      */
     public ParametryDrukarkiForm(Consumer<PrinterSettings> onCloseCallback) {
         initComponents();
-        // odczytaj nazwy wszystkich plików w folderze profiles kończące się na .json
-        // dodaj je do comboboxa
         File profilesDir = new File(settingsPath);
         File[] profileFiles = profilesDir.listFiles((_, name) -> name.endsWith(".json"));
-
-        if (profileFiles != null) {
+        //check if array empty
+        if (profileFiles != null && profileFiles.length > 0) {
             for (File profileFile : profileFiles) {
                 settingsProfileCombo.addItem(profileFile.getName().substring(0, profileFile.getName().length() - 5));
             }
+            String profileName = settingsProfileCombo.getItemAt(0);
+            System.out.println("First profile: " + profileName);
+            chosenSettingsProfile = PrinterSettings.readProfileFromFile(settingsPath, profileName);
+            if(chosenSettingsProfile != null && chosenSettingsProfile.getProfileName() != null) {
+                System.out.println("Chosen profile combo: " + chosenSettingsProfile.getProfileName());
+                settingsProfileCombo.setSelectedItem(chosenSettingsProfile.getProfileName());
+            }
+        }
+        else {
+            Logger.getGlobal().warning("No profiles found in " + settingsPath);
+            settingsProfileCombo.addItem("Default");
         }
 
         manageCOMPorts();
@@ -46,6 +56,13 @@ public class ParametryDrukarkiForm extends javax.swing.JFrame {
         for (Integer baudRate : baudRates) {
             jComboBox3.addItem(baudRate.toString());
         }
+
+        settingsProfileCombo.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                setSettingsProfileComboActionPerformed(evt);
+            }
+        });
+
         setDefaultCloseOperation(javax.swing.WindowConstants.DISPOSE_ON_CLOSE); // zamknięcie okna nie kończy działania programu
         addWindowListener(new WindowAdapter() {
             @Override
@@ -55,20 +72,6 @@ public class ParametryDrukarkiForm extends javax.swing.JFrame {
                     onCloseCallback.accept(getChosenSettingsProfile());
                 }
                 dispose();
-            }
-        });
-
-        // get cuurent item from combobox jComboBox1
-        String profileName = Objects.requireNonNull(settingsProfileCombo.getSelectedItem()).toString();
-        loadProfile(profileName);
-
-        /**
-         * Action listeners - do przeniesiania do initComponents
-         */
-
-        settingsProfileCombo.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                setSettingsProfileComboActionPerformed(evt);
             }
         });
 
@@ -516,7 +519,7 @@ public class ParametryDrukarkiForm extends javax.swing.JFrame {
         if (loadedProfile != null) {
             System.out.println("Loaded profile: " + loadedProfile);
             chosenSettingsProfile = loadedProfile;
-
+            settingsProfileCombo.setSelectedItem(loadedProfile.getProfileName());
             xMinField.setText(Integer.toString(loadedProfile.getxMin()));
             xMaxField.setText(Integer.toString(loadedProfile.getxMax()));
             yMinField.setText(Integer.toString(loadedProfile.getyMin()));
@@ -552,8 +555,8 @@ public class ParametryDrukarkiForm extends javax.swing.JFrame {
             }
 
         } else {
-            Logger.getGlobal().info("No port chosen, setting first available port");
             if(portsList.length > 0) {
+                Logger.getGlobal().info("No port chosen, setting first available port");
                 chosenSettingsProfile.setSerialPort(portsList[0].getSystemPortName());
                 jComboBox2.setSelectedItem(portsList[0].getSystemPortName());
             }

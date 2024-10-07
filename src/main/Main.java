@@ -1,14 +1,27 @@
 package main;
 
 import com.mycompany.gui_proj_inz.MainGui;
-import printer.BaseTransmHandler;
-import printer.PrinterSettings;
+
+import java.util.logging.FileHandler;
+import java.util.logging.Logger;
+import java.util.logging.SimpleFormatter;
 
 public class Main {
-    public static String DEFAULT_SETTINGS = "{\"baudRate\":9600,\"xMin\":0,\"xMax\":200,\"yMin\":0,\"yMax\":220,\"zMin\":0,\"zMax\":150,\"speed\":30,\"maxTempExt\":260,\"defaultTempExt\":100,\"maxTempBed\":80,\"defaultTempBed\":50,\"checkTempInterval\":5}";
-    public static String DEFAULT_PROFILE_PATH = "C:\\Users\\Szymon\\Documents\\ProjektyStudia\\proj_inz_3DprintApp\\profiles\\";
-    MainGui mainGui = new MainGui();
 
+    MainGui mainGui = new MainGui();
+    private static final Logger logger = Logger.getLogger(Main.class.getName());
+
+
+    static {
+        try {
+            FileHandler fileHandler = new FileHandler("PrinterConnection.log");
+            fileHandler.setFormatter(new SimpleFormatter());
+            logger.addHandler(fileHandler);
+            logger.setLevel(java.util.logging.Level.ALL);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
 
     public static void main(String[] args) {
         java.awt.EventQueue.invokeLater(new Runnable() {

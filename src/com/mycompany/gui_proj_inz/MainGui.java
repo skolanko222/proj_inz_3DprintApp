@@ -4,7 +4,7 @@
  */
 package com.mycompany.gui_proj_inz;
 
-import printer.BaseTransmHandler;
+import connection.transmiter.BaseTransmHandler;
 import printer.PrinterSettings;
 
 /**
@@ -151,16 +151,26 @@ public class MainGui extends javax.swing.JFrame {
         pack();
     }// </editor-fold>
 
-    private void menuItemParametryDrukarkiActionPerformed(java.awt.event.ActionEvent evt) {
-        // TODO add your handling code here:
-    }
+    private void menuItemParametryDrukarkiActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_menuItemParametryDrukarkiActionPerformed
+        ParametryDrukarkiForm parametryDrukarkiForm = new ParametryDrukarkiForm(settings -> {
+            System.out.println("Chosen settings profile: " + settings.getProfileName());
+            // TODO Handle the chosen settings profile here
+        });
+        parametryDrukarkiForm.setVisible(true);
+    }//GEN-LAST:event_menuItemParametryDrukarkiActionPerformed
 
     private void commandLineActionPerformed(java.awt.event.ActionEvent evt) {
         // TODO add your handling code here:
     }
 
     private void connectButtonActionPerformed(java.awt.event.ActionEvent evt) {
-        // TODO add your handling code here:
+        //check if is pressed
+        if (connectButton.isSelected()) {
+            baseTransmHandler = new BaseTransmHandler(printerSettings.getSerialPort(), printerSettings.getBaudRate());
+//            baseTransmHandler.start();
+        } else {
+//            baseTransmHandler.stop();
+        }
     }
 
     private void xyDpadButtonMouseClicked(java.awt.event.MouseEvent evt) {
@@ -182,4 +192,12 @@ public class MainGui extends javax.swing.JFrame {
     private javax.swing.JButton sendCommandButton;
     private javax.swing.JLabel xyDpadButton;
     // End of variables declaration
+
+    public static void main(String args[]) {
+        java.awt.EventQueue.invokeLater(() -> {
+            new MainGui().setVisible(true);
+        });
+
+        //delete
+    }
 }

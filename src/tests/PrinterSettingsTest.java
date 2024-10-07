@@ -14,8 +14,8 @@ import static org.junit.jupiter.api.Assertions.*;
 class PrinterSettingsTest {
 
     PrinterSettings printerSettings = new PrinterSettings(9600, null);
-    String DEFAULT_SETTINGS = main.Main.DEFAULT_SETTINGS;
-    String DEFAULT_PROFILE_PATH = main.Main.DEFAULT_PROFILE_PATH;
+    String DEFAULT_SETTINGS = PrinterSettings.DEFAULT_SETTINGS;
+    String DEFAULT_PROFILE_PATH = PrinterSettings.DEFAULT_SETTINGS;
     @BeforeEach
     void setUp() {
     }

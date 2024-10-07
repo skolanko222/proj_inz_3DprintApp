@@ -14,6 +14,8 @@ import java.util.logging.Logger;
 
 public class PrinterSettings{
     private String profileName = "Default";
+    public static String DEFAULT_SETTINGS = "{\"baudRate\":9600,\"xMin\":0,\"xMax\":200,\"yMin\":0,\"yMax\":220,\"zMin\":0,\"zMax\":150,\"speed\":30,\"maxTempExt\":260,\"defaultTempExt\":100,\"maxTempBed\":80,\"defaultTempBed\":50,\"checkTempInterval\":5}";
+    public static String DEFAULT_PROFILE_PATH = "C:\\Users\\Szymon\\Documents\\ProjektyStudia\\proj_inz_3DprintApp\\profiles\\";
 
     private Integer baudRate;
     private transient SerialPort serialPort;
@@ -47,6 +49,7 @@ public class PrinterSettings{
         }
     }
 
+    // odczytywanie ustawień z pliku
     static public PrinterSettings readProfileFromFile(String path, String profileName) {
         try {
             // read the whole file content
@@ -60,23 +63,25 @@ public class PrinterSettings{
         return null;
     }
 
-    // serializacja ustawień
+    // serializacja ustawień z obiektu do JSON string
     // TODO zamienić na prywatne metody, w testach użyć refleksji
     public String serializeProfile() {
         Gson gson = new Gson();
         return gson.toJson(this);
     }
 
-    // deserializacja ustawień
+    // deserializacja ustawień z JSON string do obiektu
     public static PrinterSettings deserializeProfile(String json) {
         Gson gson = new Gson();
+        System.out.println(json);
         return gson.fromJson(json, PrinterSettings.class);
     }
 
     // Konstruktor
     public PrinterSettings(Integer baudRate, SerialPort serialPort)  {
         this.baudRate = baudRate;
-        this.serialPort = serialPort;
+        setSerialPort(serialPort);
+//        deserializeProfile(DEFAULT_SETTINGS);
     }
 
     // Gettery i settery
@@ -94,7 +99,10 @@ public class PrinterSettings{
 
     public void setSerialPort(SerialPort serialPort) {
         this.serialPort = serialPort;
-        this.portName = serialPort.getSystemPortName();
+        if(serialPort == null)
+            this.portName = null;
+        else
+            this.portName = serialPort.getSystemPortName();
     }
     public void setSerialPort(String serialPortName) {
         try {
@@ -215,7 +223,8 @@ public class PrinterSettings{
     @Override
     public String toString() {
         return "PrinterSettings{" +
-                "baudRate=" + baudRate +
+                ", profileName='" + profileName +
+                ", baudRate=" + baudRate +
                 ", serialPort=" + serialPort +
                 ", xMin=" + xMin +
                 ", xMax=" + xMax +
