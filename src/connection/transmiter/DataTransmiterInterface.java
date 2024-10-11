@@ -1,15 +1,11 @@
 package connection.transmiter;
 
-import connection.GcodeObject;
-import printer.PrinterSettings;
+import connection.gcode.GcodeObject;
 
-import java.util.Collection;
-
-interface DataTransmiterInterface {
+public interface DataTransmiterInterface {
     void connect() throws Exception;
     boolean isConnected();
     void disconnect() throws Exception;
-    Collection<GcodeObject> getCommandQueue();
     void queueCommand(GcodeObject command);
     GcodeObject dequeueCommand();
 }

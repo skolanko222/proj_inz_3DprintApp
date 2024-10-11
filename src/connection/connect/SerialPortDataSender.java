@@ -1,17 +1,17 @@
 package connection.connect;
 
 import com.fazecast.jSerialComm.*;
-import connection.GcodeObject;
+import connection.gcode.GcodeObject;
 import connection.transmiter.BaseTransmHandler;
 
 import java.util.logging.Logger;
 
-import java.util.concurrent.ConcurrentLinkedQueue;
 
 public class SerialPortDataSender implements Runnable, SerialPortDataListener{
-    private SerialPort serialPort;
+    private final SerialPort serialPort;
     private static final Logger logger = Logger.getLogger(SerialPortDataSender.class.getName());
-    BaseTransmHandler transmHandler;
+    private final BaseTransmHandler transmHandler;
+    private final Object lock = new Object();
 
     public SerialPortDataSender(SerialPort serialPort, BaseTransmHandler transmHandler) {
         if(serialPort == null){
@@ -50,21 +50,40 @@ public class SerialPortDataSender implements Runnable, SerialPortDataListener{
     private void handleReceivedData(byte[] buffer, int len) {
         GcodeObject response = transmHandler.dequeueResponse();
         String receivedData = new String(buffer, 0, len);
-        System.out.println("halo" + receivedData);
-        logger.fine("[handleReceivedData] Read " + buffer.length + " bytes.");
-        logger.fine("[handleReceivedData] DATA START: \n" + receivedData);
         response.setResponse(receivedData);
+        if(response.getCallback() != null)
+            response.getCallback().accept(receivedData);
 
-        if(receivedData.contains("ok")) {
-            logger.fine("[handleReceivedData] Received ok from printer.");
+        if(response.isResponse())
+            transmHandler.getResponseList().addElement(response.getCommand() + " -> " + response.getResponse());
+
+        logger.info("[handleReceivedData] Read " + buffer.length + " bytes. \n" + response.toString());
+    }
+
+    public void setLock() {
+        synchronized (lock) {
+            lock.notify();
         }
-
     }
 
     @Override
     public void run() {
         while (true) {
-            if (!transmHandler.isQueueEmpty()) {
+//            synchronized (lock) {
+//                // Sprawdzaj, czy kolejka jest pusta
+//                while (transmHandler.isQueueEmpty()) {
+//                    try {
+//                        // Czekaj, aż coś zostanie dodane do kolejki
+//                        lock.wait();
+//                    } catch (InterruptedException e) {
+//                        Thread.currentThread().interrupt();
+//                        logger.severe("[SerialPortDataSender] Thread interrupted.");
+//                    }
+//                }
+//            }
+            // Jeśli nie jest pusta, wyślij dane
+//            System.out.println("Sending data");
+            if(!transmHandler.isQueueEmpty() && transmHandler.isResponseQueueEmpty()){
                 send();
             }
         }

@@ -4,12 +4,11 @@ package com.mycompany.gui_proj_inz;
  * Click nbfs://nbhost/SystemFileSystem/Templates/GUIForms/JFrame.java to edit this template
  */
 import com.fazecast.jSerialComm.*;
-import printer.PrinterSettings;
+import connection.PrinterSettings;
 
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.File;
-import java.util.Arrays;
 import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.logging.Logger;
@@ -25,11 +24,15 @@ public class ParametryDrukarkiForm extends javax.swing.JFrame {
     private String settingsPath = PrinterSettings.DEFAULT_PROFILE_PATH;
 
     private PrinterSettings chosenSettingsProfile = new PrinterSettings(9600, null);
+
+    Consumer<PrinterSettings> onCloseCallback = null;
     /**
      * Creates new form ParametryDrukarkiForm
      */
     public ParametryDrukarkiForm(Consumer<PrinterSettings> onCloseCallback) {
         initComponents();
+        this.onCloseCallback = onCloseCallback;
+
         File profilesDir = new File(settingsPath);
         File[] profileFiles = profilesDir.listFiles((_, name) -> name.endsWith(".json"));
         //check if array empty
@@ -38,11 +41,16 @@ public class ParametryDrukarkiForm extends javax.swing.JFrame {
                 settingsProfileCombo.addItem(profileFile.getName().substring(0, profileFile.getName().length() - 5));
             }
             String profileName = settingsProfileCombo.getItemAt(0);
-            System.out.println("First profile: " + profileName);
-            chosenSettingsProfile = PrinterSettings.readProfileFromFile(settingsPath, profileName);
-            if(chosenSettingsProfile != null && chosenSettingsProfile.getProfileName() != null) {
-                System.out.println("Chosen profile combo: " + chosenSettingsProfile.getProfileName());
-                settingsProfileCombo.setSelectedItem(chosenSettingsProfile.getProfileName());
+            try {
+                chosenSettingsProfile = PrinterSettings.readProfileFromFile(settingsPath, profileName);
+                if(chosenSettingsProfile != null && chosenSettingsProfile.getProfileName() != null) {
+                    settingsProfileCombo.setSelectedItem(chosenSettingsProfile.getProfileName());
+                    Logger.getGlobal().info("Loaded profile: " + chosenSettingsProfile.getProfileName());
+                }
+            } catch (Exception e) {
+                Logger.getGlobal().warning("Error while reading profile from file, loading default profile");
+                chosenSettingsProfile = PrinterSettings.deserializeProfile(PrinterSettings.DEFAULT_SETTINGS);
+                settingsProfileCombo.setSelectedItem("Default");
             }
         }
         else {
@@ -67,11 +75,7 @@ public class ParametryDrukarkiForm extends javax.swing.JFrame {
         addWindowListener(new WindowAdapter() {
             @Override
             public void windowClosing(WindowEvent e) {
-                // Call the callback with chosenSettingsProfile before the window closes
-                if (onCloseCallback != null) {
-                    onCloseCallback.accept(getChosenSettingsProfile());
-                }
-                dispose();
+                onClose();
             }
         });
 
@@ -490,12 +494,22 @@ public class ParametryDrukarkiForm extends javax.swing.JFrame {
      *
      *
      */
-
+    private void onClose() {
+        readFormFields();
+        if(chosenSettingsProfile.getSerialPort() == null && chosenSettingsProfile.getPortName() != null) {
+            chosenSettingsProfile.setSerialPort(SerialPort.getCommPort(chosenSettingsProfile.getPortName()));
+        }
+        // Call the callback with chosenSettingsProfile before the window closes
+        if (onCloseCallback != null) {
+            onCloseCallback.accept(getChosenSettingsProfile());
+        }
+        dispose();
+    }
     // przycisk zapisujący ustawienia do pliku
     private void saveProfileActionPerformed(java.awt.event.ActionEvent evt) {
         readFormFields();
         chosenSettingsProfile.saveProfileToFile(settingsPath);
-        dispose();
+        onClose();
     }
     private void readFormFields() {
         chosenSettingsProfile.setxMin(Integer.parseInt(xMinField.getText()));
@@ -538,7 +552,6 @@ public class ParametryDrukarkiForm extends javax.swing.JFrame {
 
     private void manageCOMPorts() {
         portsList = SerialPort.getCommPorts();
-        Logger.getGlobal().info("Found " + portsList.length + " ports");
 
         jComboBox2.removeAllItems();
         for (SerialPort port : portsList) {
@@ -546,7 +559,6 @@ public class ParametryDrukarkiForm extends javax.swing.JFrame {
         }
 
         if(chosenSettingsProfile.getPortName() != null) {
-            Logger.getGlobal().info("Chosen port: " + chosenSettingsProfile.getPortName());
             for (SerialPort port : portsList) {
                 if (port.getSystemPortName().equals(chosenSettingsProfile.getPortName())) {
                     jComboBox2.setSelectedItem(chosenSettingsProfile.getPortName());
@@ -556,7 +568,6 @@ public class ParametryDrukarkiForm extends javax.swing.JFrame {
 
         } else {
             if(portsList.length > 0) {
-                Logger.getGlobal().info("No port chosen, setting first available port");
                 chosenSettingsProfile.setSerialPort(portsList[0].getSystemPortName());
                 jComboBox2.setSelectedItem(portsList[0].getSystemPortName());
             }

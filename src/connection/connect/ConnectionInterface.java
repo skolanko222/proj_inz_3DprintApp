@@ -1,6 +1,6 @@
 package connection.connect;
 
-import connection.GcodeObject;
+import connection.gcode.GcodeObject;
 
 public interface ConnectionInterface {
 

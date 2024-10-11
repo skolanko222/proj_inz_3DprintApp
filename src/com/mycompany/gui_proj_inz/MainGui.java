@@ -4,8 +4,16 @@
  */
 package com.mycompany.gui_proj_inz;
 
+import com.jogamp.opengl.GLCapabilities;
+import com.jogamp.opengl.GLProfile;
+import connection.ControlPrinter;
+import connection.gcode.GcodeObject;
+import connection.gcode.previewer.SimpleGLCanvas;
 import connection.transmiter.BaseTransmHandler;
-import printer.PrinterSettings;
+import connection.PrinterSettings;
+import com.jogamp.opengl.awt.GLCanvas;
+
+import com.jogamp.opengl.util.FPSAnimator;
 
 /**
  *
@@ -15,12 +23,31 @@ public class MainGui extends javax.swing.JFrame {
 
     BaseTransmHandler baseTransmHandler = null;
     PrinterSettings printerSettings = new PrinterSettings(9600, null);
+    ControlPrinter controlPrinter = null;
 
     /**
      * Creates new form MainGui
      */
     public MainGui() {
         initComponents();
+        menuItemPauza.setEnabled(false);
+        menuItemStartDruku.setEnabled(false);
+        addMenuActions();
+
+        GLProfile profile = GLProfile.get(GLProfile.GL2);
+        if (!GLProfile.isAvailable(GLProfile.GL2)) {
+            System.err.println("GL2 profile is not available on this system.");
+        }
+        GLCapabilities capabilities = new GLCapabilities(profile);
+
+        GLCanvas glCanvas = new GLCanvas();
+        SimpleGLCanvas renderer = new SimpleGLCanvas();
+        glCanvas.addGLEventListener(renderer);
+        gcodePreviewPanel.add(glCanvas);
+//
+//        // Animacja o stałej liczbie klatek
+        FPSAnimator animator = new FPSAnimator(glCanvas, 60);
+        animator.start();
     }
 
     /**
@@ -42,6 +69,11 @@ public class MainGui extends javax.swing.JFrame {
         jMenuBar1 = new javax.swing.JMenuBar();
         menuKonfiguracja = new javax.swing.JMenu();
         menuItemParametryDrukarki = new javax.swing.JMenuItem();
+        menuDruk = new javax.swing.JMenu();
+        menuItemZaladujPlik = new javax.swing.JMenuItem();
+        menuItemStartDruku = new javax.swing.JMenuItem();
+        menuItemPauza = new javax.swing.JMenuItem();
+        gcodePreviewPanel = new javax.swing.JPanel();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
 
@@ -107,12 +139,20 @@ public class MainGui extends javax.swing.JFrame {
                                 .addContainerGap(180, Short.MAX_VALUE))
         );
 
-        logList.setModel(new javax.swing.AbstractListModel<String>() {
-            String[] strings = { "Item 1", "Item 2", "Item 3", "Item 4", "Item 5" };
-            public int getSize() { return strings.length; }
-            public String getElementAt(int i) { return strings[i]; }
-        });
         jScrollPane1.setViewportView(logList);
+
+        gcodePreviewPanel.setBackground(new java.awt.Color(204, 255, 255));
+
+        javax.swing.GroupLayout gcodePreviewPanelLayout = new javax.swing.GroupLayout(gcodePreviewPanel);
+        gcodePreviewPanel.setLayout(gcodePreviewPanelLayout);
+        gcodePreviewPanelLayout.setHorizontalGroup(
+                gcodePreviewPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                        .addGap(0, 0, Short.MAX_VALUE)
+        );
+        gcodePreviewPanelLayout.setVerticalGroup(
+                gcodePreviewPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                        .addGap(0, 0, Short.MAX_VALUE)
+        );
 
         menuKonfiguracja.setText("Konfiguracja");
 
@@ -127,6 +167,34 @@ public class MainGui extends javax.swing.JFrame {
 
         jMenuBar1.add(menuKonfiguracja);
 
+        menuDruk.setText("Druk");
+
+        menuItemZaladujPlik.setText("Załaduj plik");
+        menuItemZaladujPlik.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                menuItemZaladujPlikActionPerformed(evt);
+            }
+        });
+        menuDruk.add(menuItemZaladujPlik);
+
+        menuItemStartDruku.setText("Drukuj");
+        menuItemStartDruku.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                menuItemStartDrukuActionPerformed(evt);
+            }
+        });
+        menuDruk.add(menuItemStartDruku);
+
+        menuItemPauza.setText("Pauza");
+        menuItemPauza.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                menuItemPauzaActionPerformed(evt);
+            }
+        });
+        menuDruk.add(menuItemPauza);
+
+        jMenuBar1.add(menuDruk);
+
         setJMenuBar(jMenuBar1);
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
@@ -136,14 +204,17 @@ public class MainGui extends javax.swing.JFrame {
                         .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
                                 .addComponent(jPanel1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 671, Short.MAX_VALUE)
+                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                                        .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 671, Short.MAX_VALUE)
+                                        .addComponent(gcodePreviewPanel, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
                                 .addContainerGap())
         );
         layout.setVerticalGroup(
                 layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                         .addComponent(jPanel1, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                         .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
-                                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                                .addComponent(gcodePreviewPanel, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                                 .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 131, javax.swing.GroupLayout.PREFERRED_SIZE)
                                 .addContainerGap())
         );
@@ -155,49 +226,200 @@ public class MainGui extends javax.swing.JFrame {
         ParametryDrukarkiForm parametryDrukarkiForm = new ParametryDrukarkiForm(settings -> {
             System.out.println("Chosen settings profile: " + settings.getProfileName());
             // TODO Handle the chosen settings profile here
+            System.out.println(settings);
+            printerSettings = settings;
         });
         parametryDrukarkiForm.setVisible(true);
     }//GEN-LAST:event_menuItemParametryDrukarkiActionPerformed
 
+    public void addMenuActions(){
+        // Add the following code to the `initComponents` method in `MainGui.java`
+
+// Create the new menu
+        menuActions = new javax.swing.JMenu();
+        menuActions.setText("Ruch");
+
+// Create menu items
+        menuItemHomeAll = new javax.swing.JMenuItem();
+        menuItemHomeAll.setText("Zaparkuj wszystkie osie");
+        menuItemHomeAll.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                if (controlPrinter != null) {
+                    controlPrinter.homeAllAxis();
+                }
+            }
+        });
+        menuActions.add(menuItemHomeAll);
+
+        menuItemHomeX = new javax.swing.JMenuItem();
+        menuItemHomeX.setText("Zaparkuj oś X");
+        menuItemHomeX.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                if (controlPrinter != null) {
+                    controlPrinter.homeAxis(ControlPrinter.PrinterAxis.X);
+                }
+            }
+        });
+        menuActions.add(menuItemHomeX);
+
+        menuItemHomeY = new javax.swing.JMenuItem();
+        menuItemHomeY.setText("Zaparkuj oś Y");
+        menuItemHomeY.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                if (controlPrinter != null) {
+                    controlPrinter.homeAxis(ControlPrinter.PrinterAxis.Y);
+                }
+            }
+        });
+        menuActions.add(menuItemHomeY);
+
+        menuItemHomeZ = new javax.swing.JMenuItem();
+        menuItemHomeZ.setText("Zaparkuj oś Z");
+        menuItemHomeZ.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                if (controlPrinter != null) {
+                    controlPrinter.homeAxis(ControlPrinter.PrinterAxis.Z);
+                }
+            }
+        });
+        menuActions.add(menuItemHomeZ);
+
+        menuItemSendM84 = new javax.swing.JMenuItem();
+        menuItemSendM84.setText("Wyłącz silniki");
+        menuItemSendM84.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                if (controlPrinter != null) {
+                    controlPrinter.releaseMotors();
+                }
+            }
+        });
+        menuActions.add(menuItemSendM84);
+
+// Add the new menu to the menu bar
+        jMenuBar1.add(menuActions);
+        //make all the menu items not active
+        menuItemHomeAll.setEnabled(false);
+        menuItemHomeX.setEnabled(false);
+        menuItemHomeY.setEnabled(false);
+        menuItemHomeZ.setEnabled(false);
+        menuItemSendM84.setEnabled(false);
+
+    }
+
     private void commandLineActionPerformed(java.awt.event.ActionEvent evt) {
-        // TODO add your handling code here:
+        // if enter is pressed - send command
+        sendCommandButtonActionPerformed(evt);
+
     }
 
     private void connectButtonActionPerformed(java.awt.event.ActionEvent evt) {
         //check if is pressed
         if (connectButton.isSelected()) {
-            baseTransmHandler = new BaseTransmHandler(printerSettings.getSerialPort(), printerSettings.getBaudRate());
-//            baseTransmHandler.start();
+            try{
+                baseTransmHandler = new BaseTransmHandler(printerSettings);
+                controlPrinter = new ControlPrinter(baseTransmHandler, printerSettings);
+                baseTransmHandler.getResponseList().setCallback(() -> {
+                    jScrollPane1.getVerticalScrollBar().setValue(jScrollPane1.getVerticalScrollBar().getMaximum()+1);
+                    return null;
+                });
+                logList.setModel(baseTransmHandler.getResponseList());
+                logList.setAutoscrolls(true);
+                logList.ensureIndexIsVisible(logList.getModel().getSize() - 1);
+
+            } catch (Exception e) {
+                e.printStackTrace();
+                connectButton.setSelected(false);
+
+            }
+            menuItemHomeAll.setEnabled(true);
+            menuItemHomeX.setEnabled(true);
+            menuItemHomeY.setEnabled(true);
+            menuItemHomeZ.setEnabled(true);
+            menuItemSendM84.setEnabled(true);
         } else {
-//            baseTransmHandler.stop();
+            try {
+                baseTransmHandler.disconnect();
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+            baseTransmHandler = null;
+            controlPrinter = null;
+            menuItemHomeAll.setEnabled(false);
+            menuItemHomeX.setEnabled(false);
+            menuItemHomeY.setEnabled(false);
+            menuItemHomeZ.setEnabled(false);
+            menuItemSendM84.setEnabled(false);
         }
     }
 
     private void xyDpadButtonMouseClicked(java.awt.event.MouseEvent evt) {
-        // TODO add your handling code here:
+        int [] labelSizes = {xyDpadButton.getWidth(), xyDpadButton.getHeight()};
+        int [] mousePos = {evt.getX(), evt.getY()};
+        int [] labelPos = {xyDpadButton.getX(), xyDpadButton.getY()};
+        int [] labelCenter = {labelSizes[0]/2, labelSizes[1]/2};
+        System.out.println("Mouse center: " + labelCenter[0] + " " + labelCenter[1]);
+        System.out.println("Mouse pos: " + mousePos[0] + " " + mousePos[1]);
+        try {
+            if (mousePos[0] > labelSizes[0] / 3 && mousePos[0] < 2 * labelSizes[0] / 3 && mousePos[1] < labelSizes[1] / 3)
+                controlPrinter.moveAxisRelatively(ControlPrinter.PrinterAxis.Y, 10);
+            if (mousePos[0] > labelSizes[0] / 3 && mousePos[0] < 2 * labelSizes[0] / 3 && mousePos[1] > 2 * labelSizes[1] / 3)
+                controlPrinter.moveAxisRelatively(ControlPrinter.PrinterAxis.Y, -10);
+            if (mousePos[0] < labelSizes[0] / 3 && mousePos[1] > labelSizes[1] / 3 && mousePos[1] < 2 * labelSizes[1] / 3)
+                controlPrinter.moveAxisRelatively(ControlPrinter.PrinterAxis.X, -10);
+            if (mousePos[0] > 2 * labelSizes[0] / 3 && mousePos[1] > labelSizes[1] / 3 && mousePos[1] < 2 * labelSizes[1] / 3)
+                controlPrinter.moveAxisRelatively(ControlPrinter.PrinterAxis.X, 10);
+        } catch (NullPointerException e) {
+            System.out.println("Printer not connected");
+        }
+
+
     }
 
     private void sendCommandButtonActionPerformed(java.awt.event.ActionEvent evt) {
-    }  //GEN-LAST:event_sendButtonActionPerformed
+        baseTransmHandler.queueCommand(GcodeObject.prepareCommand(commandLine.getText(), true, null));
+    }
+
+    private void menuItemZaladujPlikActionPerformed(java.awt.event.ActionEvent evt) {
+        // TODO add your handling code here:
+    }
+
+    private void menuItemStartDrukuActionPerformed(java.awt.event.ActionEvent evt) {
+        // TODO add your handling code here:
+    }
+
+    private void menuItemPauzaActionPerformed(java.awt.event.ActionEvent evt) {
+        // TODO add your handling code here:
+    }
 
     // Variables declaration - do not modify
-    private javax.swing.JTextField commandLine;
     private javax.swing.JToggleButton connectButton;
+    private javax.swing.JPanel gcodePreviewPanel;
+    private javax.swing.JLabel xyDpadButton;
+    private javax.swing.JList<String> logList;
     private javax.swing.JMenuBar jMenuBar1;
     private javax.swing.JPanel jPanel1;
     private javax.swing.JScrollPane jScrollPane1;
-    private javax.swing.JList<String> logList;
+    private javax.swing.JTextField commandLine;
+    private javax.swing.JMenu menuDruk;
     private javax.swing.JMenuItem menuItemParametryDrukarki;
+    private javax.swing.JMenuItem menuItemPauza;
+    private javax.swing.JMenuItem menuItemStartDruku;
+    private javax.swing.JMenuItem menuItemZaladujPlik;
     private javax.swing.JMenu menuKonfiguracja;
     private javax.swing.JButton sendCommandButton;
-    private javax.swing.JLabel xyDpadButton;
     // End of variables declaration
+
+    private javax.swing.JMenu menuActions;
+    private javax.swing.JMenuItem menuItemHomeAll;
+    private javax.swing.JMenuItem menuItemHomeX;
+    private javax.swing.JMenuItem menuItemHomeY;
+    private javax.swing.JMenuItem menuItemHomeZ;
+    private javax.swing.JMenuItem menuItemSendM84;
 
     public static void main(String args[]) {
         java.awt.EventQueue.invokeLater(() -> {
             new MainGui().setVisible(true);
         });
-
         //delete
     }
 }

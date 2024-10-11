@@ -1,0 +1,1 @@
+{"profileName":"Default","baudRate":9600,"portName":"COM3","xMin":0,"xMax":200,"yMin":0,"yMax":220,"zMin":0,"zMax":150,"speed":3800,"maxTempExt":260,"defaultTempExt":200,"maxTempBed":80,"defaultTempBed":50,"checkTempInterval":50}
