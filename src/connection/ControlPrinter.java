@@ -50,7 +50,7 @@ public class ControlPrinter {
     }
 
     public void homeAllAxis() {
-        sendCommand(GcodeObject.prepareCommand("G28\n", true, (_) -> {
+        sendCommand(GcodeObject.prepareCommand("G28\n", true, (a) -> {
             this.x = 0;
             this.y = 0;
             this.z = 0;

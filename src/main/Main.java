@@ -10,8 +10,6 @@ public class Main {
 
     MainGui mainGui = new MainGui();
     private static final Logger logger = Logger.getLogger(Main.class.getName());
-
-
     static {
         try {
             FileHandler fileHandler = new FileHandler("PrinterConnection.log");

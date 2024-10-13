@@ -6,14 +6,20 @@ package com.mycompany.gui_proj_inz;
 
 import com.jogamp.opengl.GLCapabilities;
 import com.jogamp.opengl.GLProfile;
+import com.jogamp.opengl.awt.GLJPanel;
 import connection.ControlPrinter;
 import connection.gcode.GcodeObject;
 import connection.gcode.previewer.SimpleGLCanvas;
 import connection.transmiter.BaseTransmHandler;
 import connection.PrinterSettings;
-import com.jogamp.opengl.awt.GLCanvas;
 
 import com.jogamp.opengl.util.FPSAnimator;
+
+import javax.swing.*;
+import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
+import java.io.File;
+import javax.swing.filechooser.FileFilter;
 
 /**
  *
@@ -24,7 +30,8 @@ public class MainGui extends javax.swing.JFrame {
     BaseTransmHandler baseTransmHandler = null;
     PrinterSettings printerSettings = new PrinterSettings(9600, null);
     ControlPrinter controlPrinter = null;
-
+    SimpleGLCanvas renderer;
+    GLJPanel glCanvas;
     /**
      * Creates new form MainGui
      */
@@ -34,20 +41,59 @@ public class MainGui extends javax.swing.JFrame {
         menuItemStartDruku.setEnabled(false);
         addMenuActions();
 
-        GLProfile profile = GLProfile.get(GLProfile.GL2);
-        if (!GLProfile.isAvailable(GLProfile.GL2)) {
-            System.err.println("GL2 profile is not available on this system.");
-        }
+        GLProfile profile = GLProfile.getDefault();
         GLCapabilities capabilities = new GLCapabilities(profile);
 
-        GLCanvas glCanvas = new GLCanvas();
-        SimpleGLCanvas renderer = new SimpleGLCanvas();
+        glCanvas = new GLJPanel(capabilities);
+
+        renderer = new SimpleGLCanvas();
         glCanvas.addGLEventListener(renderer);
-        gcodePreviewPanel.add(glCanvas);
-//
-//        // Animacja o stałej liczbie klatek
+        gcodePreviewPanel.add(glCanvas, java.awt.BorderLayout.CENTER);
+
+        gcodePreviewPanel.revalidate();
+        gcodePreviewPanel.repaint();
+
+
         FPSAnimator animator = new FPSAnimator(glCanvas, 60);
         animator.start();
+        gcodePreviewPanel.setVisible(true);
+        this.setFocusable(true);  // Make sure the JFrame is focusable
+        this.requestFocusInWindow();  // Request focus for the JFrame
+
+        this.addKeyListener(new KeyListener() {
+            @Override
+            public void keyTyped(KeyEvent e) {
+
+            }
+
+            @Override
+            public void keyPressed(KeyEvent ke) {
+                float DELTA_SIZE = 1.1F;
+                System.out.println("Key pressed: " + ke.getKeyCode());
+                switch (ke.getKeyCode()) {
+                    case KeyEvent.VK_LEFT:
+                        renderer.getRotation().setX(renderer.getRotation().getX() - DELTA_SIZE);
+                        System.out.println("X: " + renderer.getRotation().getX());
+                        break;
+                    case KeyEvent.VK_RIGHT:
+                        renderer.getRotation().setX(renderer.getRotation().getX() + DELTA_SIZE);
+                        break;
+                    case KeyEvent.VK_UP:
+                        renderer.getRotation().setY(renderer.getRotation().getY() - DELTA_SIZE);
+                        break;
+                    case KeyEvent.VK_DOWN:
+                        renderer.getRotation().setY(renderer.getRotation().getY() + DELTA_SIZE);
+                        break;
+                    default:
+                        break;
+                }
+            }
+
+            @Override
+            public void keyReleased(KeyEvent e){
+                }
+        });
+
     }
 
     /**
@@ -141,18 +187,10 @@ public class MainGui extends javax.swing.JFrame {
 
         jScrollPane1.setViewportView(logList);
 
-        gcodePreviewPanel.setBackground(new java.awt.Color(204, 255, 255));
+//        gcodePreviewPanel.setBackground(new java.awt.Color(204, 255, 255));
+        java.awt.BorderLayout gcodePreviewPanelLayout = new java.awt.BorderLayout();
+        gcodePreviewPanel.setLayout(new java.awt.BorderLayout());
 
-        javax.swing.GroupLayout gcodePreviewPanelLayout = new javax.swing.GroupLayout(gcodePreviewPanel);
-        gcodePreviewPanel.setLayout(gcodePreviewPanelLayout);
-        gcodePreviewPanelLayout.setHorizontalGroup(
-                gcodePreviewPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                        .addGap(0, 0, Short.MAX_VALUE)
-        );
-        gcodePreviewPanelLayout.setVerticalGroup(
-                gcodePreviewPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                        .addGap(0, 0, Short.MAX_VALUE)
-        );
 
         menuKonfiguracja.setText("Konfiguracja");
 
@@ -232,7 +270,7 @@ public class MainGui extends javax.swing.JFrame {
         parametryDrukarkiForm.setVisible(true);
     }//GEN-LAST:event_menuItemParametryDrukarkiActionPerformed
 
-    public void addMenuActions(){
+    private void addMenuActions(){
         // Add the following code to the `initComponents` method in `MainGui.java`
 
 // Create the new menu
@@ -379,8 +417,33 @@ public class MainGui extends javax.swing.JFrame {
         baseTransmHandler.queueCommand(GcodeObject.prepareCommand(commandLine.getText(), true, null));
     }
 
+
     private void menuItemZaladujPlikActionPerformed(java.awt.event.ActionEvent evt) {
-        // TODO add your handling code here:
+        JFileChooser fileChooser = new JFileChooser();
+
+        // Set the file selection mode (files only)
+        fileChooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
+        fileChooser.setFileFilter(new FileFilter() {
+            @Override
+            public boolean accept(File f) {
+                // Allow directories or files with .gcode extension
+                return f.isDirectory() || f.getName().toLowerCase().endsWith(".gcode");
+            }
+
+            @Override
+            public String getDescription() {
+                return "G-code Files (*.gcode)";
+            }
+        });
+
+        // Show the file chooser dialog
+        int result = fileChooser.showOpenDialog(this);
+
+        // Check if a file was selected
+        if (result == JFileChooser.APPROVE_OPTION) {
+            // Get the selected file
+            File selectedFile = fileChooser.getSelectedFile();
+        }
     }
 
     private void menuItemStartDrukuActionPerformed(java.awt.event.ActionEvent evt) {
@@ -416,7 +479,7 @@ public class MainGui extends javax.swing.JFrame {
     private javax.swing.JMenuItem menuItemHomeZ;
     private javax.swing.JMenuItem menuItemSendM84;
 
-    public static void main(String args[]) {
+    public static void main(String[] args) {
         java.awt.EventQueue.invokeLater(() -> {
             new MainGui().setVisible(true);
         });

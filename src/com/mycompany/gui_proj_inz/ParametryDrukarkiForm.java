@@ -34,7 +34,7 @@ public class ParametryDrukarkiForm extends javax.swing.JFrame {
         this.onCloseCallback = onCloseCallback;
 
         File profilesDir = new File(settingsPath);
-        File[] profileFiles = profilesDir.listFiles((_, name) -> name.endsWith(".json"));
+        File[] profileFiles = profilesDir.listFiles((a, name) -> name.endsWith(".json"));
         //check if array empty
         if (profileFiles != null && profileFiles.length > 0) {
             for (File profileFile : profileFiles) {
