@@ -4,6 +4,9 @@ public class Line {
     private Point start;
     private Point end;
 
+    //
+    private boolean isIdleMove = false;
+
     public Line(Point start, Point end) {
         this.start = start;
         this.end = end;
@@ -23,6 +26,18 @@ public class Line {
 
     public void setEnd(Point end) {
         this.end = end;
+    }
+
+    public boolean checkIfTheSameZ() {
+        return start.getZ() == end.getZ();
+    }
+
+    public boolean isIdleMove() {
+        return isIdleMove;
+    }
+
+    public void setIdleMove(boolean idleMove) {
+        isIdleMove = idleMove;
     }
 
     @Override

@@ -69,20 +69,6 @@ public class SerialPortDataSender implements Runnable, SerialPortDataListener{
     @Override
     public void run() {
         while (true) {
-//            synchronized (lock) {
-//                // Sprawdzaj, czy kolejka jest pusta
-//                while (transmHandler.isQueueEmpty()) {
-//                    try {
-//                        // Czekaj, aż coś zostanie dodane do kolejki
-//                        lock.wait();
-//                    } catch (InterruptedException e) {
-//                        Thread.currentThread().interrupt();
-//                        logger.severe("[SerialPortDataSender] Thread interrupted.");
-//                    }
-//                }
-//            }
-            // Jeśli nie jest pusta, wyślij dane
-//            System.out.println("Sending data");
             if(!transmHandler.isQueueEmpty() && transmHandler.isResponseQueueEmpty()){
                 send();
             }

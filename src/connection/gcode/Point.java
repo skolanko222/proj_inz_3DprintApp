@@ -5,11 +5,13 @@ public class Point {
     private float y;
     private float z;
 
+
     public Point(float x, float y, float z) {
         this.x = x;
         this.y = y;
         this.z = z;
     }
+
 
     public float getX() {
         return x;

@@ -27,6 +27,7 @@ public class SimpleGLCanvas implements GLEventListener {
     private int xSize, ySize;
     boolean ortho = true;
     private double scaleFactor = 1.0f;
+    private double zoomFactor = 1.0f;
 
     public SimpleGLCanvas() {
         try {
@@ -78,8 +79,6 @@ public class SimpleGLCanvas implements GLEventListener {
 
         gl.glScaled(this.scaleFactor, this.scaleFactor, this.scaleFactor);
 
-        // Rotate prior to translating so that rotation happens from middle of
-        // object.
         if (ortho) {
             // Manual rotation
             gl.glRotated(this.rotation.getX(), 0.0, 1.0, 0.0);
@@ -95,9 +94,11 @@ public class SimpleGLCanvas implements GLEventListener {
 
         // Start drawing lines
         gl.glBegin(GL2.GL_LINES);
-        gl.glLineWidth(1.0f);
+        gl.glLineWidth(20.0f);
 
         for (Line ls : lines) {
+            if(!ls.checkIfTheSameZ())
+                continue;
             gl.glColor3f(1.0f, 1.0f, 1.0f);  // Set color (white)
             gl.glVertex3f(ls.getStart().getX(), ls.getStart().getY(), ls.getStart().getZ());
             gl.glVertex3f(ls.getEnd().getX(), ls.getEnd().getY(), ls.getEnd().getZ());
@@ -124,16 +125,13 @@ public class SimpleGLCanvas implements GLEventListener {
         gl.glMatrixMode(GL_PROJECTION);
         gl.glLoadIdentity();  // Load identity matrix
 
-        // Set up orthographic projection (scaling with aspect ratio)
-//        double orthoSize = 1.0;
-//        gl.glOrtho(-orthoSize * aspect, orthoSize * aspect, -orthoSize, orthoSize, -10.0, 20.0);
 
         gl.glViewport(0, 0, width, height);
     }
 
     @Override
     public void dispose(GLAutoDrawable drawable) {
-        // Czyszczenie zasobów (jeśli potrzebne)
+
     }
 
     private void setupPerpective(int x, int y, GLAutoDrawable drawable, boolean ortho) {
@@ -165,6 +163,26 @@ public class SimpleGLCanvas implements GLEventListener {
             gl.glMatrixMode(GL_MODELVIEW);
             gl.glLoadIdentity(); // reset
 
+        }
+    }
+
+    public void zoom(int z) {
+        if (ortho) {
+
+            this.zoomFactor += z * 0.2;
+            System.out.println("Zoom factor: " + this.zoomFactor);
+            if (this.zoomFactor < 1) {
+                this.zoomFactor = 1;
+            }
+
+            if (this.zoomFactor > 30) {
+                this.zoomFactor = 30;
+            }
+
+            scaleFactor = findScaleFactor(this.xSize, this.ySize, gcodeFileReader.getMin(), gcodeFileReader.getMax(), 0.9) * this.zoomFactor;
+
+        } else {
+            //this.eye.z += increments;
         }
     }
 

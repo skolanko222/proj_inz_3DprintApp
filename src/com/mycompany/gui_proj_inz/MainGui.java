@@ -16,8 +16,8 @@ import connection.PrinterSettings;
 import com.jogamp.opengl.util.FPSAnimator;
 
 import javax.swing.*;
-import java.awt.event.KeyEvent;
-import java.awt.event.KeyListener;
+import java.awt.*;
+import java.awt.event.*;
 import java.io.File;
 import javax.swing.filechooser.FileFilter;
 
@@ -50,8 +50,6 @@ public class MainGui extends javax.swing.JFrame {
         glCanvas.addGLEventListener(renderer);
         gcodePreviewPanel.add(glCanvas, java.awt.BorderLayout.CENTER);
 
-        gcodePreviewPanel.revalidate();
-        gcodePreviewPanel.repaint();
 
 
         FPSAnimator animator = new FPSAnimator(glCanvas, 60);
@@ -91,7 +89,21 @@ public class MainGui extends javax.swing.JFrame {
 
             @Override
             public void keyReleased(KeyEvent e){
-                }
+            }
+        });
+
+        this.addMouseWheelListener(e -> {
+            int delta = e.getWheelRotation();
+            if (delta == 0)
+                return;
+
+//            System.out.println("Mouse wheel rotation -  " + delta* -1);
+
+            if (delta > 0) {
+                renderer.zoom(delta);
+            } else {
+                renderer.zoom(delta );
+            }
         });
 
     }
@@ -104,100 +116,202 @@ public class MainGui extends javax.swing.JFrame {
     @SuppressWarnings("unchecked")
     // <editor-fold defaultstate="collapsed" desc="Generated Code">
     private void initComponents() {
+        jTabbedPane1 = new JTabbedPane();
+        jPanel1 = new JPanel();
+        connectButton = new JToggleButton();
+        commandLine = new JTextField();
+        sendCommandButton = new JButton();
+        xyDpadButton = new JLabel();
+        jScrollPane1 = new JScrollPane();
+        logList = new JList<>();
+        jMenuBar1 = new JMenuBar();
+        menuKonfiguracja = new JMenu();
+        menuItemParametryDrukarki = new JMenuItem();
+        menuDruk = new JMenu();
+        menuItemZaladujPlik = new JMenuItem();
+        menuItemStartDruku = new JMenuItem();
+        menuItemPauza = new JMenuItem();
+        gcodePreviewPanel = new JPanel();
 
-        jPanel1 = new javax.swing.JPanel();
-        connectButton = new javax.swing.JToggleButton();
-        commandLine = new javax.swing.JTextField();
-        sendCommandButton = new javax.swing.JButton();
-        xyDpadButton = new javax.swing.JLabel();
-        jScrollPane1 = new javax.swing.JScrollPane();
-        logList = new javax.swing.JList<>();
-        jMenuBar1 = new javax.swing.JMenuBar();
-        menuKonfiguracja = new javax.swing.JMenu();
-        menuItemParametryDrukarki = new javax.swing.JMenuItem();
-        menuDruk = new javax.swing.JMenu();
-        menuItemZaladujPlik = new javax.swing.JMenuItem();
-        menuItemStartDruku = new javax.swing.JMenuItem();
-        menuItemPauza = new javax.swing.JMenuItem();
-        gcodePreviewPanel = new javax.swing.JPanel();
+        extTempCheckBox = new JCheckBox();
+        extTempSlider = new JSlider();
+        extTempLabel = new JLabel();
+        bedTempLabel = new JLabel();
+        bedTempSlider = new JSlider();
+        bedTempCheckBox = new JCheckBox();
+        fanLabel = new JLabel();
+        fanSlider = new JSlider();
+        fanCheckBox = new JCheckBox();
+        jPanel3 = new JPanel();
+        idleMoveCheckBox = new JCheckBox();
+        firstRangeSpinner = new JSpinner();
+        secondRangeSpinner = new JSpinner();
+        firstRangeSlider = new JSlider();
+        secondRangeSlider = new JSlider();
+        oneLayerCheckBox = new JCheckBox();
+        rangeLayerCheckBox = new JCheckBox();
 
-        setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
+        setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
+        BorderLayout gcodePreviewPanelLayout = new BorderLayout();
+        gcodePreviewPanel.setLayout(gcodePreviewPanelLayout);
 
-        jPanel1.setBackground(new java.awt.Color(255, 255, 255));
+
+        jPanel1.setBackground(new Color(255, 255, 255));
 
         connectButton.setText("Połącz");
-        connectButton.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
+        connectButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent evt) {
                 connectButtonActionPerformed(evt);
             }
         });
 
-        commandLine.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
+        commandLine.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent evt) {
                 commandLineActionPerformed(evt);
             }
         });
 
         sendCommandButton.setText("Wyślij");
-        sendCommandButton.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
+        sendCommandButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent evt) {
                 sendCommandButtonActionPerformed(evt);
             }
         });
 
-        xyDpadButton.setBackground(new java.awt.Color(255, 255, 255));
-        xyDpadButton.setIcon(new javax.swing.ImageIcon(getClass().getResource("/Images/d-pad.png"))); // NOI18N
-        xyDpadButton.addMouseListener(new java.awt.event.MouseAdapter() {
-            public void mouseClicked(java.awt.event.MouseEvent evt) {
+        xyDpadButton.setBackground(new Color(255, 255, 255));
+        xyDpadButton.setIcon(new ImageIcon(getClass().getResource("/Images/d-pad.png"))); // NOI18N
+        xyDpadButton.addMouseListener(new MouseAdapter() {
+            public void mouseClicked(MouseEvent evt) {
                 xyDpadButtonMouseClicked(evt);
             }
         });
-
-        javax.swing.GroupLayout jPanel1Layout = new javax.swing.GroupLayout(jPanel1);
+        
+        GroupLayout jPanel1Layout = new GroupLayout(jPanel1);
         jPanel1.setLayout(jPanel1Layout);
+
         jPanel1Layout.setHorizontalGroup(
-                jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                jPanel1Layout.createParallelGroup(GroupLayout.Alignment.LEADING)
                         .addGroup(jPanel1Layout.createSequentialGroup()
                                 .addGap(37, 37, 37)
-                                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                                        .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                                                .addGroup(jPanel1Layout.createSequentialGroup()
+                                .addGroup(jPanel1Layout.createParallelGroup(GroupLayout.Alignment.LEADING)
+                                        .addGroup(jPanel1Layout.createSequentialGroup()
+                                                .addComponent(commandLine)
+                                                .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
+                                                .addComponent(sendCommandButton, GroupLayout.PREFERRED_SIZE, 61, GroupLayout.PREFERRED_SIZE))
+                                        .addGroup(jPanel1Layout.createSequentialGroup()
+                                                .addGroup(jPanel1Layout.createParallelGroup(GroupLayout.Alignment.LEADING)
                                                         .addComponent(connectButton)
-                                                        .addGap(0, 0, Short.MAX_VALUE))
-                                                .addGroup(jPanel1Layout.createSequentialGroup()
-                                                        .addComponent(commandLine)
-                                                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                                        .addComponent(sendCommandButton, javax.swing.GroupLayout.PREFERRED_SIZE, 61, javax.swing.GroupLayout.PREFERRED_SIZE)))
-                                        .addComponent(xyDpadButton))
-                                .addContainerGap(46, Short.MAX_VALUE))
+                                                        .addComponent(xyDpadButton))
+                                                .addGap(0, 0, Short.MAX_VALUE)))
+                                .addContainerGap(GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                        .addGroup(jPanel1Layout.createSequentialGroup()
+                                .addContainerGap()
+                                .addGroup(jPanel1Layout.createParallelGroup(GroupLayout.Alignment.LEADING)
+                                        .addComponent(fanCheckBox)
+                                        .addComponent(extTempCheckBox)
+                                        .addComponent(bedTempCheckBox))
+                                .addGap(15, 15, 15)
+                                .addGroup(jPanel1Layout.createParallelGroup(GroupLayout.Alignment.CENTER)
+                                        .addComponent(fanSlider, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
+                                        .addComponent(bedTempSlider, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
+                                        .addComponent(extTempSlider, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE))
+                                .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
+                                .addGroup(jPanel1Layout.createParallelGroup(GroupLayout.Alignment.LEADING)
+                                        .addComponent(fanLabel)
+                                        .addComponent(bedTempLabel)
+                                        .addComponent(extTempLabel))
+                                .addContainerGap(49, Short.MAX_VALUE))
         );
         jPanel1Layout.setVerticalGroup(
-                jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                jPanel1Layout.createParallelGroup(GroupLayout.Alignment.LEADING)
                         .addGroup(jPanel1Layout.createSequentialGroup()
                                 .addGap(12, 12, 12)
                                 .addComponent(connectButton)
                                 .addGap(18, 18, 18)
-                                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                                .addGroup(jPanel1Layout.createParallelGroup(GroupLayout.Alignment.BASELINE)
                                         .addComponent(sendCommandButton)
-                                        .addComponent(commandLine, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                                        .addComponent(commandLine, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE))
                                 .addGap(28, 28, 28)
                                 .addComponent(xyDpadButton)
-                                .addContainerGap(180, Short.MAX_VALUE))
+                                .addGap(34, 34, 34)
+                                .addGroup(jPanel1Layout.createParallelGroup(GroupLayout.Alignment.BASELINE)
+                                        .addComponent(extTempCheckBox)
+                                        .addComponent(extTempSlider, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
+                                        .addComponent(extTempLabel))
+                                .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
+                                .addGroup(jPanel1Layout.createParallelGroup(GroupLayout.Alignment.BASELINE)
+                                        .addComponent(bedTempCheckBox)
+                                        .addComponent(bedTempSlider, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
+                                        .addComponent(bedTempLabel))
+                                .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
+                                .addGroup(jPanel1Layout.createParallelGroup(GroupLayout.Alignment.BASELINE)
+                                        .addComponent(fanCheckBox)
+                                        .addComponent(fanSlider, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
+                                        .addComponent(fanLabel))
+                                .addContainerGap(198, Short.MAX_VALUE))
         );
+
+        jTabbedPane1.addTab("Sterowanie", jPanel1);
+
+        idleMoveCheckBox.setText("Pokaż ruch jałowy.");
+
+        oneLayerCheckBox.setText("Pokaż pojedyńczą warstwę.");
+
+        rangeLayerCheckBox.setText("Pokaż przedział warstw.");
+
+        GroupLayout jPanel3Layout = new GroupLayout(jPanel3);
+        jPanel3.setLayout(jPanel3Layout);
+        jPanel3Layout.setHorizontalGroup(
+                jPanel3Layout.createParallelGroup(GroupLayout.Alignment.LEADING)
+                        .addGroup(jPanel3Layout.createSequentialGroup()
+                                .addGap(16, 16, 16)
+                                .addGroup(jPanel3Layout.createParallelGroup(GroupLayout.Alignment.LEADING)
+                                        .addComponent(oneLayerCheckBox)
+                                        .addGroup(jPanel3Layout.createSequentialGroup()
+                                                .addComponent(secondRangeSpinner, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
+                                                .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
+                                                .addComponent(secondRangeSlider, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE))
+                                        .addGroup(jPanel3Layout.createSequentialGroup()
+                                                .addComponent(firstRangeSpinner, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
+                                                .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
+                                                .addComponent(firstRangeSlider, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE))
+                                        .addComponent(idleMoveCheckBox)
+                                        .addComponent(rangeLayerCheckBox))
+                                .addContainerGap(75, Short.MAX_VALUE))
+        );
+        jPanel3Layout.setVerticalGroup(
+                jPanel3Layout.createParallelGroup(GroupLayout.Alignment.LEADING)
+                        .addGroup(jPanel3Layout.createSequentialGroup()
+                                .addGap(20, 20, 20)
+                                .addComponent(idleMoveCheckBox)
+                                .addGap(21, 21, 21)
+                                .addComponent(oneLayerCheckBox)
+                                .addGap(4, 4, 4)
+                                .addComponent(rangeLayerCheckBox)
+                                .addPreferredGap(LayoutStyle.ComponentPlacement.UNRELATED)
+                                .addGroup(jPanel3Layout.createParallelGroup(GroupLayout.Alignment.BASELINE)
+                                        .addComponent(firstRangeSpinner, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
+                                        .addComponent(firstRangeSlider, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE))
+                                .addPreferredGap(LayoutStyle.ComponentPlacement.UNRELATED)
+                                .addGroup(jPanel3Layout.createParallelGroup(GroupLayout.Alignment.BASELINE)
+                                        .addComponent(secondRangeSpinner, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
+                                        .addComponent(secondRangeSlider, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE))
+                                .addContainerGap(460, Short.MAX_VALUE))
+        );
+
+        jTabbedPane1.addTab("Podgląd gcodu", jPanel3);
 
         jScrollPane1.setViewportView(logList);
 
-//        gcodePreviewPanel.setBackground(new java.awt.Color(204, 255, 255));
-        java.awt.BorderLayout gcodePreviewPanelLayout = new java.awt.BorderLayout();
-        gcodePreviewPanel.setLayout(new java.awt.BorderLayout());
+//        gcodePreviewPanel.setBackground(new java.awt.Color(204, 255, 255))
 
 
         menuKonfiguracja.setText("Konfiguracja");
 
-        menuItemParametryDrukarki.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_P, java.awt.event.InputEvent.CTRL_DOWN_MASK));
+        menuItemParametryDrukarki.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_P, InputEvent.CTRL_DOWN_MASK));
         menuItemParametryDrukarki.setText("Parametry drukarki");
-        menuItemParametryDrukarki.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
+        menuItemParametryDrukarki.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent evt) {
                 menuItemParametryDrukarkiActionPerformed(evt);
             }
         });
@@ -208,24 +322,24 @@ public class MainGui extends javax.swing.JFrame {
         menuDruk.setText("Druk");
 
         menuItemZaladujPlik.setText("Załaduj plik");
-        menuItemZaladujPlik.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
+        menuItemZaladujPlik.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent evt) {
                 menuItemZaladujPlikActionPerformed(evt);
             }
         });
         menuDruk.add(menuItemZaladujPlik);
 
         menuItemStartDruku.setText("Drukuj");
-        menuItemStartDruku.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
+        menuItemStartDruku.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent evt) {
                 menuItemStartDrukuActionPerformed(evt);
             }
         });
         menuDruk.add(menuItemStartDruku);
 
         menuItemPauza.setText("Pauza");
-        menuItemPauza.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
+        menuItemPauza.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent evt) {
                 menuItemPauzaActionPerformed(evt);
             }
         });
@@ -240,22 +354,51 @@ public class MainGui extends javax.swing.JFrame {
         layout.setHorizontalGroup(
                 layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                         .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
-                                .addComponent(jPanel1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addComponent(jTabbedPane1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                                        .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 671, Short.MAX_VALUE)
+                                        .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 661, Short.MAX_VALUE)
                                         .addComponent(gcodePreviewPanel, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
                                 .addContainerGap())
         );
         layout.setVerticalGroup(
                 layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                        .addComponent(jPanel1, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                        .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
-                                .addComponent(gcodePreviewPanel, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 131, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addGroup(layout.createSequentialGroup()
+                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                                        .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
+                                                .addComponent(gcodePreviewPanel, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                                .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 131, javax.swing.GroupLayout.PREFERRED_SIZE))
+                                        .addComponent(jTabbedPane1))
                                 .addContainerGap())
         );
+
+        extTempCheckBox.setText("Ekstruder");
+        extTempCheckBox.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent evt) {
+                extTempCheckBoxActionPerformed(evt);
+            }
+        });
+
+        extTempLabel.setText("- -");
+
+        bedTempLabel.setText("- -");
+
+        bedTempCheckBox.setText("Stół");
+        bedTempCheckBox.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent evt) {
+                bedTempCheckBoxActionPerformed(evt);
+            }
+        });
+
+        fanLabel.setText("- -");
+
+        fanCheckBox.setText("Wiatrak");
+        fanCheckBox.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent evt) {
+                fanCheckBoxActionPerformed(evt);
+            }
+        });
 
         pack();
     }// </editor-fold>
@@ -349,6 +492,18 @@ public class MainGui extends javax.swing.JFrame {
         sendCommandButtonActionPerformed(evt);
 
     }
+
+    private void extTempCheckBoxActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_extTempCheckBoxActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_extTempCheckBoxActionPerformed
+
+    private void bedTempCheckBoxActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_bedTempCheckBoxActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_bedTempCheckBoxActionPerformed
+
+    private void fanCheckBoxActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_fanCheckBoxActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_fanCheckBoxActionPerformed
 
     private void connectButtonActionPerformed(java.awt.event.ActionEvent evt) {
         //check if is pressed
@@ -470,6 +625,25 @@ public class MainGui extends javax.swing.JFrame {
     private javax.swing.JMenuItem menuItemZaladujPlik;
     private javax.swing.JMenu menuKonfiguracja;
     private javax.swing.JButton sendCommandButton;
+
+    private javax.swing.JCheckBox bedTempCheckBox;
+    private javax.swing.JLabel bedTempLabel;
+    private javax.swing.JSlider bedTempSlider;
+    private javax.swing.JCheckBox extTempCheckBox;
+    private javax.swing.JLabel extTempLabel;
+    private javax.swing.JSlider extTempSlider;
+    private javax.swing.JCheckBox fanCheckBox;
+    private javax.swing.JLabel fanLabel;
+    private javax.swing.JSlider fanSlider;
+    private javax.swing.JCheckBox oneLayerCheckBox;
+    private javax.swing.JCheckBox rangeLayerCheckBox;
+    private javax.swing.JSlider secondRangeSlider;
+    private javax.swing.JSpinner secondRangeSpinner;
+    private javax.swing.JTabbedPane jTabbedPane1;
+    private javax.swing.JPanel jPanel3;
+    private javax.swing.JSlider firstRangeSlider;
+    private javax.swing.JSpinner firstRangeSpinner;
+    private javax.swing.JCheckBox idleMoveCheckBox;
     // End of variables declaration
 
     private javax.swing.JMenu menuActions;

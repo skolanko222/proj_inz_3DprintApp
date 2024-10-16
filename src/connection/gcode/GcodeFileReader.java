@@ -5,6 +5,7 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 
 public class GcodeFileReader implements AutoCloseable {
     private final BufferedReader reader;
@@ -56,6 +57,9 @@ public class GcodeFileReader implements AutoCloseable {
         Point currentPoint = new Point(0, 0, 0);
         while ((words = parseNextLine()) != null) {
             int length = words.length;
+            boolean isIdleMove = false;
+
+            //typical G1 command (move in XY planes)
             if(length > 0 && words[0].equals("G1") || words[0].equals("G0")) {
                 Float x = null, y = null, z = null;
                 for (int i = 1; i < length; i++) {
@@ -64,8 +68,11 @@ public class GcodeFileReader implements AutoCloseable {
                         x = Float.parseFloat(word.substring(1));
                     } else if (word.startsWith("Y")) {
                         y = Float.parseFloat(word.substring(1));
-                    } else if (word.startsWith("Z")) {
+                    } else if (word.startsWith("Z")) { //move in Z axis, not typical
                         z = Float.parseFloat(word.substring(1));
+                    }
+                    else if (word.startsWith("E")) {
+                        isIdleMove = true;
                     }
                 }
                 if (x == null) {
@@ -79,15 +86,19 @@ public class GcodeFileReader implements AutoCloseable {
                 }
 
                 currentPoint = new Point(x, y, z);
-                System.out.println("Current point: " + currentPoint);
                 Line line = new Line(lastPoint, currentPoint);
-                lines.add(line);
+                line.setIdleMove(isIdleMove);
+                if (isIdleMove){
+                    System.out.println("Idle move: " + Arrays.toString(words));
+                    lines.add(line);
+                }
+                else {
+                    System.out.println("Normal move: " + Arrays.toString(words));
+                }
                 lastPoint = currentPoint;
             }
         }
         calculateAll();
-        System.out.println("Center: " + center);
-        System.out.println("Max: " + max);
         return this;
     }
     private void calculateAll() {
