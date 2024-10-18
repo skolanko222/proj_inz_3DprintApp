@@ -41,7 +41,7 @@ public class BaseTransmHandler implements DataTransmiterInterface {
             e.printStackTrace();
         }
     }
-    public BaseTransmHandler(PrinterSettings settings) {
+    public BaseTransmHandler(PrinterSettings settings) throws Exception {
         chosenPort = settings.getSerialPort();
         sender = new SerialPortDataSender(chosenPort, this);
         senderThread = new Thread(sender);
@@ -49,18 +49,23 @@ public class BaseTransmHandler implements DataTransmiterInterface {
 
         // choose the port to connect to
         logger.info("[BaseTransmHandler] Chosen port: " + chosenPort.getSystemPortName());
-        chosenPort.openPort();
-        chosenPort.setComPortParameters(settings.getBaudRate(), 8, 1, 0);
-        chosenPort.addDataListener(sender);
+        connect();
+
         senderThread.start();
+        //wait a second for the sender to start
+        Thread.sleep(1000);
+        queueCommand(GcodeObject.prepareCommand("M105", false, null));
+        queueCommand(GcodeObject.prepareCommand("M105", false, null));
+
     }
 
+    @Override
     public void queueCommand(GcodeObject command) {
         logger.finest("[connection.connect.SerialPortDataSender] Command added to send queue: " + command);
-        sender.setLock();
         commandsQueue.add(command);
     }
 
+    @Override
     public GcodeObject dequeueCommand() {
         GcodeObject command = commandsQueue.poll();
         queueResponse(command);
@@ -101,8 +106,16 @@ public class BaseTransmHandler implements DataTransmiterInterface {
 
     @Override
     public void connect() throws Exception {
-        if(chosenPort != null && !chosenPort.isOpen()) {
+        if (chosenPort == null) {
+            throw new Exception("Serial port is null");
+        }
+        else if(chosenPort.isOpen()) {
+            throw new Exception("Port is already open");
+        }
+        else {
             chosenPort.openPort();
+            chosenPort.setComPortParameters(settings.getBaudRate(), 8, 1, 0);
+            chosenPort.addDataListener(sender);
         }
     }
 
@@ -113,13 +126,12 @@ public class BaseTransmHandler implements DataTransmiterInterface {
 
     public void disconnect() throws Exception {
         if(chosenPort != null && chosenPort.isOpen()) {
+            chosenPort.removeDataListener();
             chosenPort.closePort();
+            Logger.getLogger(BaseTransmHandler.class.getName()).info("Port closed");
         }
     }
 
-    public void sendImid(String command) {
-        sender.sendImid(command);
-    }
     public MaxListSizeStringListModel getResponseList() {
         return responseList;
     }

@@ -3,6 +3,10 @@ package connection;
 import connection.gcode.GcodeObject;
 import connection.transmiter.DataTransmiterInterface;
 
+import javax.swing.*;
+import java.util.function.Consumer;
+import java.util.logging.Logger;
+
 public class ControlPrinter {
     private final DataTransmiterInterface dataTransmiter;
     private final PrinterSettings printerSettings;
@@ -10,6 +14,13 @@ public class ControlPrinter {
     private Integer x = null;
     private Integer y = null;
     private Integer z = null;
+
+    //temperature
+    private Float extruderTemp = null;
+    private Consumer<Float> extruderTempLabel;
+    private Float bedTemp = null;
+    private Consumer<Float> bedTempLabel;
+    private Thread temperatureThread;
 
 
     public enum PrinterAxis {
@@ -28,9 +39,46 @@ public class ControlPrinter {
             try {
                 dataTransmiter.connect();
             } catch (Exception e) {
-                e.printStackTrace();
+                Logger.getLogger(ControlPrinter.class.getName()).severe("Error while connecting to printer");
             }
         }
+
+        int updateTemperatureInterval = printerSettings.getCheckTempInterval();
+        temperatureThread = new Thread(() -> {
+            while (true) {
+                try {
+                    Thread.sleep(updateTemperatureInterval * 1000);
+                    updateTemperature();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        });
+    }
+    public void startTemperatureThread(Consumer<Float> extruderTempConsumer, Consumer<Float> bedTempConsumer) {
+        extruderTempLabel = extruderTempConsumer;
+        bedTempLabel = bedTempConsumer;
+        temperatureThread.start();
+    }
+
+    private void updateTemperature() {
+        sendCommand(GcodeObject.prepareCommand("M105\n", false, (a) -> {
+            String[] split = a.split(" ");
+            for (String s : split) {
+                try{
+                    System.out.println(s);
+                    if (s.startsWith("T")) {
+                        extruderTemp = Float.parseFloat(s.substring(2));
+                        extruderTempLabel.accept(extruderTemp);
+                    } else if (s.startsWith("B")) {
+                        bedTemp = Float.parseFloat(s.substring(2));
+                        bedTempLabel.accept(bedTemp);
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        }));
     }
 
     public void moveAxisRelatively(PrinterAxis axis, int distance) {

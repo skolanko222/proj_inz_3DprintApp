@@ -18,9 +18,6 @@ public class SerialPortDataSender implements Runnable, SerialPortDataListener{
             throw new NullPointerException("SerialPort is null");
         }
         this.serialPort = serialPort;
-        if(!serialPort.isOpen()){
-            serialPort.openPort();
-        }
         this.transmHandler = transmHandler;
     }
     private void send() {
@@ -43,7 +40,6 @@ public class SerialPortDataSender implements Runnable, SerialPortDataListener{
     public void serialEvent(SerialPortEvent event) {
         byte[] newData = new byte[serialPort.bytesAvailable()];
         int numRead = serialPort.readBytes(newData, newData.length);
-        System.out.println("Connected");
         handleReceivedData(newData, numRead);
     }
 
@@ -51,19 +47,17 @@ public class SerialPortDataSender implements Runnable, SerialPortDataListener{
         GcodeObject response = transmHandler.dequeueResponse();
         String receivedData = new String(buffer, 0, len);
         response.setResponse(receivedData);
-        if(response.getCallback() != null)
-            response.getCallback().accept(receivedData);
-
+        System.out.println("Response: " + response.getResponse());
         if(response.isResponse())
             transmHandler.getResponseList().addElement(response.getCommand() + " -> " + response.getResponse());
+        if(response.getCallback() != null) {
+            System.out.println("Callback");
+            response.getCallback().accept(receivedData);
+            System.out.println("Callback end");
+        }
+
 
         logger.info("[handleReceivedData] Read " + buffer.length + " bytes. \n" + response.toString());
-    }
-
-    public void setLock() {
-        synchronized (lock) {
-            lock.notify();
-        }
     }
 
     @Override

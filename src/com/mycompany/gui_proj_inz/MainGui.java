@@ -19,6 +19,7 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
 import java.io.File;
+import java.util.logging.Logger;
 import javax.swing.filechooser.FileFilter;
 
 /**
@@ -37,27 +38,23 @@ public class MainGui extends javax.swing.JFrame {
      */
     public MainGui() {
         initComponents();
-        menuItemPauza.setEnabled(false);
-        menuItemStartDruku.setEnabled(false);
         addMenuActions();
+        updateVisibilityOnConnection();
 
+        //gcode preview
         GLProfile profile = GLProfile.getDefault();
         GLCapabilities capabilities = new GLCapabilities(profile);
-
         glCanvas = new GLJPanel(capabilities);
-
         renderer = new SimpleGLCanvas();
         glCanvas.addGLEventListener(renderer);
         gcodePreviewPanel.add(glCanvas, java.awt.BorderLayout.CENTER);
-
-
-
         FPSAnimator animator = new FPSAnimator(glCanvas, 60);
         animator.start();
         gcodePreviewPanel.setVisible(true);
-        this.setFocusable(true);  // Make sure the JFrame is focusable
-        this.requestFocusInWindow();  // Request focus for the JFrame
+        this.setFocusable(true);
+        this.requestFocusInWindow();
 
+        //rotation
         this.addKeyListener(new KeyListener() {
             @Override
             public void keyTyped(KeyEvent e) {
@@ -91,7 +88,7 @@ public class MainGui extends javax.swing.JFrame {
             public void keyReleased(KeyEvent e){
             }
         });
-
+        //zoom
         this.addMouseWheelListener(e -> {
             int delta = e.getWheelRotation();
             if (delta == 0)
@@ -405,9 +402,8 @@ public class MainGui extends javax.swing.JFrame {
 
     private void menuItemParametryDrukarkiActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_menuItemParametryDrukarkiActionPerformed
         ParametryDrukarkiForm parametryDrukarkiForm = new ParametryDrukarkiForm(settings -> {
-            System.out.println("Chosen settings profile: " + settings.getProfileName());
             // TODO Handle the chosen settings profile here
-            System.out.println(settings);
+            Logger.getLogger(MainGui.class.getName()).info("Printer settings changed: " + settings);
             printerSettings = settings;
         });
         parametryDrukarkiForm.setVisible(true);
@@ -508,41 +504,42 @@ public class MainGui extends javax.swing.JFrame {
     private void connectButtonActionPerformed(java.awt.event.ActionEvent evt) {
         //check if is pressed
         if (connectButton.isSelected()) {
-            try{
+            try {
+                if (baseTransmHandler != null) {
+                    baseTransmHandler.disconnect();
+                }
                 baseTransmHandler = new BaseTransmHandler(printerSettings);
                 controlPrinter = new ControlPrinter(baseTransmHandler, printerSettings);
+
+                controlPrinter.startTemperatureThread(
+                        temp -> extTempLabel.setText(temp.toString() + "/" + printerSettings.getMaxTempExt()),
+                        temp -> bedTempLabel.setText(temp.toString() + "/" + printerSettings.getMaxTempBed())
+                );
+                System.out.println(printerSettings);
+
                 baseTransmHandler.getResponseList().setCallback(() -> {
-                    jScrollPane1.getVerticalScrollBar().setValue(jScrollPane1.getVerticalScrollBar().getMaximum()+1);
+                    jScrollPane1.getVerticalScrollBar().setValue(jScrollPane1.getVerticalScrollBar().getMaximum() + 1);
                     return null;
                 });
                 logList.setModel(baseTransmHandler.getResponseList());
                 logList.setAutoscrolls(true);
                 logList.ensureIndexIsVisible(logList.getModel().getSize() - 1);
-
             } catch (Exception e) {
                 e.printStackTrace();
                 connectButton.setSelected(false);
-
             }
-            menuItemHomeAll.setEnabled(true);
-            menuItemHomeX.setEnabled(true);
-            menuItemHomeY.setEnabled(true);
-            menuItemHomeZ.setEnabled(true);
-            menuItemSendM84.setEnabled(true);
         } else {
             try {
-                baseTransmHandler.disconnect();
+                if (baseTransmHandler != null) {
+                    baseTransmHandler.disconnect();
+                }
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
             baseTransmHandler = null;
             controlPrinter = null;
-            menuItemHomeAll.setEnabled(false);
-            menuItemHomeX.setEnabled(false);
-            menuItemHomeY.setEnabled(false);
-            menuItemHomeZ.setEnabled(false);
-            menuItemSendM84.setEnabled(false);
         }
+        updateVisibilityOnConnection();
     }
 
     private void xyDpadButtonMouseClicked(java.awt.event.MouseEvent evt) {
@@ -564,14 +561,11 @@ public class MainGui extends javax.swing.JFrame {
         } catch (NullPointerException e) {
             System.out.println("Printer not connected");
         }
-
-
     }
 
     private void sendCommandButtonActionPerformed(java.awt.event.ActionEvent evt) {
         baseTransmHandler.queueCommand(GcodeObject.prepareCommand(commandLine.getText(), true, null));
     }
-
 
     private void menuItemZaladujPlikActionPerformed(java.awt.event.ActionEvent evt) {
         JFileChooser fileChooser = new JFileChooser();
@@ -607,6 +601,23 @@ public class MainGui extends javax.swing.JFrame {
 
     private void menuItemPauzaActionPerformed(java.awt.event.ActionEvent evt) {
         // TODO add your handling code here:
+    }
+
+    private void updateVisibilityOnConnection(){
+        boolean isConnected = baseTransmHandler != null;
+        connectButton.setSelected(isConnected);
+        menuItemHomeAll.setEnabled(isConnected);
+        menuItemHomeX.setEnabled(isConnected);
+        menuItemHomeY.setEnabled(isConnected);
+        menuItemHomeZ.setEnabled(isConnected);
+        menuItemSendM84.setEnabled(isConnected);
+        extTempCheckBox.setEnabled(isConnected);
+        bedTempCheckBox.setEnabled(isConnected);
+        fanCheckBox.setEnabled(isConnected);
+        extTempSlider.setEnabled(isConnected);
+        bedTempSlider.setEnabled(isConnected);
+        fanSlider.setEnabled(isConnected);
+
     }
 
     // Variables declaration - do not modify
