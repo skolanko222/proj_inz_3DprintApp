@@ -8,6 +8,7 @@ import com.jogamp.opengl.GLCapabilities;
 import com.jogamp.opengl.GLProfile;
 import com.jogamp.opengl.awt.GLJPanel;
 import connection.ControlPrinter;
+import connection.gcode.GcodeFileReader;
 import connection.gcode.GcodeObject;
 import connection.gcode.previewer.SimpleGLCanvas;
 import connection.transmiter.BaseTransmHandler;
@@ -19,7 +20,10 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
 import java.io.File;
+import java.io.IOException;
 import java.util.logging.Logger;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 import javax.swing.filechooser.FileFilter;
 
 /**
@@ -33,6 +37,18 @@ public class MainGui extends javax.swing.JFrame {
     ControlPrinter controlPrinter = null;
     SimpleGLCanvas renderer;
     GLJPanel glCanvas;
+    FPSAnimator animator;
+    GcodeFileReader gcodeFileReader = null;
+
+    Integer desiredTempExt = null;
+    Integer desiredTempBed = null;
+    Integer desiredFanSpeed = null;
+
+    Float actualTempExt = null;
+    Float actualTempBed = null;
+    Float actualFanSpeed = null;
+
+    int [] layerStarts = new int[2];
     /**
      * Creates new form MainGui
      */
@@ -40,20 +56,14 @@ public class MainGui extends javax.swing.JFrame {
         initComponents();
         addMenuActions();
         updateVisibilityOnConnection();
+        updateVisibilityOnFileLoad();
 
         //gcode preview
         GLProfile profile = GLProfile.getDefault();
         GLCapabilities capabilities = new GLCapabilities(profile);
         glCanvas = new GLJPanel(capabilities);
-        renderer = new SimpleGLCanvas();
-        glCanvas.addGLEventListener(renderer);
-        gcodePreviewPanel.add(glCanvas, java.awt.BorderLayout.CENTER);
-        FPSAnimator animator = new FPSAnimator(glCanvas, 60);
-        animator.start();
-        gcodePreviewPanel.setVisible(true);
-        this.setFocusable(true);
-        this.requestFocusInWindow();
-
+        oneLayerCheckBox.addActionListener(this::oneLayerCheckBoxActionPerformed);
+        rangeLayerCheckBox.addActionListener(this::rangeLayerCheckBoxActionPerformed);
         //rotation
         this.addKeyListener(new KeyListener() {
             @Override
@@ -101,6 +111,61 @@ public class MainGui extends javax.swing.JFrame {
             } else {
                 renderer.zoom(delta );
             }
+        });
+
+        gcodePreviewPanel.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                super.mouseClicked(e);
+                focus();
+
+            }
+        });
+
+        firstRangeSlider.addChangeListener(e -> {
+            if(oneLayerCheckBox.isSelected()){
+                renderer.setDrawModeOneLayer((int) firstRangeSpinner.getValue());
+            }
+            else if(rangeLayerCheckBox.isSelected()){
+                renderer.setDrawModeRangeOfLayers(new int[]{(int) firstRangeSpinner.getValue(), (int) secondRangeSpinner.getValue()});
+            }
+            else
+                renderer.setDrawModeAll();
+
+            firstRangeSpinner.setValue(firstRangeSlider.getValue());
+        });
+
+        secondRangeSlider.addChangeListener(e -> {
+            if(oneLayerCheckBox.isSelected()){
+                renderer.setDrawModeOneLayer((int) firstRangeSpinner.getValue());
+            }
+            else if(rangeLayerCheckBox.isSelected()){
+                renderer.setDrawModeRangeOfLayers(new int[]{(int) firstRangeSpinner.getValue(), (int) secondRangeSpinner.getValue()});
+                System.out.println("Range: " + firstRangeSpinner.getValue() + " " + secondRangeSpinner.getValue());
+            }
+            else
+                renderer.setDrawModeAll();
+            secondRangeSpinner.setValue(secondRangeSlider.getValue());
+        });
+
+        firstRangeSpinner.addChangeListener(e -> {
+            if(oneLayerCheckBox.isSelected()){
+                renderer.setDrawModeOneLayer((int) firstRangeSpinner.getValue());
+            }
+            if(rangeLayerCheckBox.isSelected()){
+                renderer.setDrawModeRangeOfLayers(new int[]{(int) firstRangeSpinner.getValue(), (int) secondRangeSpinner.getValue()});
+            }
+            firstRangeSlider.setValue((int) firstRangeSpinner.getValue());
+        });
+
+        secondRangeSpinner.addChangeListener(e -> {
+            if(oneLayerCheckBox.isSelected()){
+                renderer.setDrawModeOneLayer((int) firstRangeSpinner.getValue());
+            }
+            if(rangeLayerCheckBox.isSelected()){
+                renderer.setDrawModeRangeOfLayers(new int[]{(int) firstRangeSpinner.getValue(), (int) secondRangeSpinner.getValue()});
+            }
+            secondRangeSlider.setValue((int) secondRangeSpinner.getValue());
         });
 
     }
@@ -397,6 +462,30 @@ public class MainGui extends javax.swing.JFrame {
             }
         });
 
+        fanSlider.addChangeListener(new ChangeListener() {
+            public void stateChanged(ChangeEvent evt) {
+                setupSliders();
+                if(controlPrinter != null)
+                    controlPrinter.setFanSpeed(desiredFanSpeed);
+            }
+        });
+
+        bedTempSlider.addChangeListener(new ChangeListener() {
+            public void stateChanged(ChangeEvent evt) {
+                setupSliders();
+                if(controlPrinter != null)
+                    controlPrinter.setDesiredBedTemp(desiredTempBed);
+            }
+        });
+
+        extTempSlider.addChangeListener(new ChangeListener() {
+            public void stateChanged(ChangeEvent evt) {
+                setupSliders();
+                if(controlPrinter != null)
+                    controlPrinter.setDesiredExtrTemp(desiredTempExt);
+            }
+        });
+
         pack();
     }// </editor-fold>
 
@@ -405,18 +494,15 @@ public class MainGui extends javax.swing.JFrame {
             // TODO Handle the chosen settings profile here
             Logger.getLogger(MainGui.class.getName()).info("Printer settings changed: " + settings);
             printerSettings = settings;
+            setupSliders();
         });
         parametryDrukarkiForm.setVisible(true);
     }//GEN-LAST:event_menuItemParametryDrukarkiActionPerformed
 
     private void addMenuActions(){
-        // Add the following code to the `initComponents` method in `MainGui.java`
-
-// Create the new menu
         menuActions = new javax.swing.JMenu();
         menuActions.setText("Ruch");
 
-// Create menu items
         menuItemHomeAll = new javax.swing.JMenuItem();
         menuItemHomeAll.setText("Zaparkuj wszystkie osie");
         menuItemHomeAll.addActionListener(new java.awt.event.ActionListener() {
@@ -490,15 +576,28 @@ public class MainGui extends javax.swing.JFrame {
     }
 
     private void extTempCheckBoxActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_extTempCheckBoxActionPerformed
-        // TODO add your handling code here:
+        updateVisibilityOnConnection();
+        if(extTempCheckBox.isSelected())
+            controlPrinter.setDesiredExtrTemp(desiredTempExt);
+        else
+            controlPrinter.setDesiredExtrTemp(0);
     }//GEN-LAST:event_extTempCheckBoxActionPerformed
 
     private void bedTempCheckBoxActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_bedTempCheckBoxActionPerformed
-        // TODO add your handling code here:
+        updateVisibilityOnConnection();
+        if (bedTempCheckBox.isSelected())
+            controlPrinter.setDesiredBedTemp(desiredTempBed);
+        else
+            controlPrinter.setDesiredBedTemp(0);
+
     }//GEN-LAST:event_bedTempCheckBoxActionPerformed
 
     private void fanCheckBoxActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_fanCheckBoxActionPerformed
-        // TODO add your handling code here:
+        updateVisibilityOnConnection();
+        if(fanCheckBox.isSelected())
+            controlPrinter.setFanSpeed(desiredFanSpeed);
+        else
+            controlPrinter.setFanSpeed(0);
     }//GEN-LAST:event_fanCheckBoxActionPerformed
 
     private void connectButtonActionPerformed(java.awt.event.ActionEvent evt) {
@@ -508,15 +607,21 @@ public class MainGui extends javax.swing.JFrame {
                 if (baseTransmHandler != null) {
                     baseTransmHandler.disconnect();
                 }
+                //connect to the printer
                 baseTransmHandler = new BaseTransmHandler(printerSettings);
                 controlPrinter = new ControlPrinter(baseTransmHandler, printerSettings);
-
+                //update the temperature labels
                 controlPrinter.startTemperatureThread(
-                        temp -> extTempLabel.setText(temp.toString() + "/" + printerSettings.getMaxTempExt()),
-                        temp -> bedTempLabel.setText(temp.toString() + "/" + printerSettings.getMaxTempBed())
+                        temp -> {
+                            actualTempExt = temp;
+                            updatedTempLabels();
+                        },
+                        temp -> {
+                            actualTempBed = temp;
+                            updatedTempLabels();
+                        }
                 );
-                System.out.println(printerSettings);
-
+                //autoscroll
                 baseTransmHandler.getResponseList().setCallback(() -> {
                     jScrollPane1.getVerticalScrollBar().setValue(jScrollPane1.getVerticalScrollBar().getMaximum() + 1);
                     return null;
@@ -536,6 +641,7 @@ public class MainGui extends javax.swing.JFrame {
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
+            controlPrinter.stopTemperatureThread();
             baseTransmHandler = null;
             controlPrinter = null;
         }
@@ -592,7 +698,55 @@ public class MainGui extends javax.swing.JFrame {
         if (result == JFileChooser.APPROVE_OPTION) {
             // Get the selected file
             File selectedFile = fileChooser.getSelectedFile();
+            try {
+                gcodeFileReader = new GcodeFileReader(selectedFile);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+            if (renderer != null) {
+                gcodePreviewPanel.remove(glCanvas);
+                glCanvas.removeGLEventListener(renderer);
+                if (animator != null) {
+                    animator.stop();
+                    animator.remove(glCanvas);
+                }
+            }
+            renderer = new SimpleGLCanvas(gcodeFileReader);
+            glCanvas.addGLEventListener(renderer);
+            gcodePreviewPanel.add(glCanvas, java.awt.BorderLayout.CENTER);
+            animator = new FPSAnimator(glCanvas, 60);
+            animator.start();
+            gcodePreviewPanel.setVisible(true);
+
+
+            this.setFocusable(true);
+            this.requestFocusInWindow();
+            glCanvas.display();
+            gcodePreviewPanel.revalidate();
+            gcodePreviewPanel.repaint();
+            secondRangeSlider.setMaximum(gcodeFileReader.getLayerAmount());
+            firstRangeSlider.setMaximum(gcodeFileReader.getLayerAmount());
+            updateVisibilityOnFileLoad();
         }
+    }
+
+    private void setupSliders() {
+        if(printerSettings != null){
+            extTempSlider.setMaximum(printerSettings.getMaxTempExt());
+            bedTempSlider.setMaximum(printerSettings.getMaxTempBed());
+            fanSlider.setMaximum(100);
+
+            desiredTempExt = extTempSlider.getValue();
+            desiredTempBed = bedTempSlider.getValue();
+            desiredFanSpeed = fanSlider.getValue();
+            updatedTempLabels();
+        }
+    }
+
+    private void updatedTempLabels(){
+        extTempLabel.setText((actualTempExt != null ? actualTempExt.toString() : "-- ")  + "/" + (desiredTempExt != null ? desiredTempExt.toString() : "--"));
+        bedTempLabel.setText((actualTempBed != null ? actualTempBed.toString() : "-- " ) + "/"+ (desiredTempBed != null ? desiredTempBed.toString() : "--"));
+        fanLabel.setText((actualFanSpeed != null ? actualFanSpeed.toString()   : "-- " ) + "/" + (desiredFanSpeed != null ? desiredFanSpeed.toString() : "--"));
     }
 
     private void menuItemStartDrukuActionPerformed(java.awt.event.ActionEvent evt) {
@@ -602,6 +756,30 @@ public class MainGui extends javax.swing.JFrame {
     private void menuItemPauzaActionPerformed(java.awt.event.ActionEvent evt) {
         // TODO add your handling code here:
     }
+
+    private void oneLayerCheckBoxActionPerformed(java.awt.event.ActionEvent evt) {
+        if(rangeLayerCheckBox.isSelected()){
+            rangeLayerCheckBox.setSelected(false);
+        }
+        if(oneLayerCheckBox.isSelected()){
+            rangeLayerCheckBox.setSelected(false);
+            firstRangeSpinner.setEnabled(true);
+            secondRangeSpinner.setEnabled(false);
+        }
+    }
+
+    private void rangeLayerCheckBoxActionPerformed(java.awt.event.ActionEvent evt) {
+        if(oneLayerCheckBox.isSelected()){
+            oneLayerCheckBox.setSelected(false);
+        }
+        if(rangeLayerCheckBox.isSelected()){
+            oneLayerCheckBox.setSelected(false);
+            firstRangeSpinner.setEnabled(true);
+            secondRangeSpinner.setEnabled(true);
+        }
+
+    }
+
 
     private void updateVisibilityOnConnection(){
         boolean isConnected = baseTransmHandler != null;
@@ -614,10 +792,25 @@ public class MainGui extends javax.swing.JFrame {
         extTempCheckBox.setEnabled(isConnected);
         bedTempCheckBox.setEnabled(isConnected);
         fanCheckBox.setEnabled(isConnected);
-        extTempSlider.setEnabled(isConnected);
-        bedTempSlider.setEnabled(isConnected);
-        fanSlider.setEnabled(isConnected);
+        extTempSlider.setEnabled(extTempCheckBox.isSelected());
+        bedTempSlider.setEnabled(bedTempCheckBox.isSelected());
+        fanSlider.setEnabled(fanCheckBox.isSelected());
+        focus();
+    }
 
+    private void updateVisibilityOnFileLoad(){
+        boolean isFileLoaded = gcodeFileReader != null;
+        System.out.println("File loaded: " + isFileLoaded);
+        oneLayerCheckBox.setEnabled(isFileLoaded);
+        rangeLayerCheckBox.setEnabled(isFileLoaded);
+        idleMoveCheckBox.setEnabled(isFileLoaded);
+
+        focus();
+    }
+
+    private void focus()   {
+        this.setFocusable(true);
+        this.requestFocusInWindow();
     }
 
     // Variables declaration - do not modify
@@ -665,6 +858,16 @@ public class MainGui extends javax.swing.JFrame {
     private javax.swing.JMenuItem menuItemSendM84;
 
     public static void main(String[] args) {
+        for (UIManager.LookAndFeelInfo info : UIManager.getInstalledLookAndFeels()) {
+            if ("Nimbus".equals(info.getName())) {
+                try {
+                    UIManager.setLookAndFeel(info.getClassName());
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+                break;
+            }
+        }
         java.awt.EventQueue.invokeLater(() -> {
             new MainGui().setVisible(true);
         });

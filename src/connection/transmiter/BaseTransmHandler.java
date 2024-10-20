@@ -26,10 +26,7 @@ public class BaseTransmHandler implements DataTransmiterInterface {
     private ConcurrentLinkedQueue<GcodeObject> commandsQueue = new ConcurrentLinkedQueue<GcodeObject>();
     private ConcurrentLinkedQueue<GcodeObject> responsesQueue = new ConcurrentLinkedQueue<GcodeObject>();
     PrinterSettings settings;
-
     private MaxListSizeStringListModel responseList = new MaxListSizeStringListModel(50);
-
-
     Thread senderThread;
     static {
         try {
@@ -128,6 +125,7 @@ public class BaseTransmHandler implements DataTransmiterInterface {
         if(chosenPort != null && chosenPort.isOpen()) {
             chosenPort.removeDataListener();
             chosenPort.closePort();
+            senderThread.interrupt();
             Logger.getLogger(BaseTransmHandler.class.getName()).info("Port closed");
         }
     }

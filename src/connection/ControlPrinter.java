@@ -50,7 +50,7 @@ public class ControlPrinter {
                     Thread.sleep(updateTemperatureInterval * 1000);
                     updateTemperature();
                 } catch (InterruptedException e) {
-                    e.printStackTrace();
+                    Logger.getLogger(ControlPrinter.class.getName()).info("Temperature thread interrupted");
                 }
             }
         });
@@ -60,6 +60,21 @@ public class ControlPrinter {
         bedTempLabel = bedTempConsumer;
         temperatureThread.start();
     }
+    public void stopTemperatureThread() {
+        temperatureThread.interrupt();
+    }
+
+    public void setDesiredExtrTemp(float extruderTemp) {
+        sendCommand(GcodeObject.prepareCommand("M104 S" + extruderTemp + "\n", false, null));
+    }
+    public void setDesiredBedTemp(float bedTemp) {
+        sendCommand(GcodeObject.prepareCommand("M140 S" + bedTemp + "\n", false, null));
+    }
+    public void setFanSpeed(int speed) {
+        sendCommand(GcodeObject.prepareCommand("M106 S" + speed + "\n", false, null));
+    }
+
+
 
     private void updateTemperature() {
         sendCommand(GcodeObject.prepareCommand("M105\n", false, (a) -> {

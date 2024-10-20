@@ -6,8 +6,6 @@ import connection.gcode.GcodeFileReader;
 import connection.gcode.Line;
 import connection.gcode.Point;
 
-import java.io.File;
-import java.io.FileWriter;
 import java.util.ArrayList;
 
 import static com.jogamp.opengl.GL.*;
@@ -29,9 +27,31 @@ public class SimpleGLCanvas implements GLEventListener {
     private double scaleFactor = 1.0f;
     private double zoomFactor = 1.0f;
 
-    public SimpleGLCanvas() {
+    private int oneLayer = 0;
+    private int [] rangeOfLayers = null;
+    public enum DRAW_MODE {
+        ALL,
+        ONE_LAYER,
+        RANGE_OF_LAYERS
+    }
+    public void setDrawModeOneLayer(int layer) {
+        this.drawMode = DRAW_MODE.ONE_LAYER;
+        this.oneLayer = layer;
+    }
+
+    public void setDrawModeRangeOfLayers(int [] layers) {
+        this.drawMode = DRAW_MODE.RANGE_OF_LAYERS;
+        this.rangeOfLayers = layers;
+    }
+    public void setDrawModeAll() {
+        this.drawMode = DRAW_MODE.ALL;
+    }
+
+
+    private DRAW_MODE drawMode = DRAW_MODE.ALL;
+    public SimpleGLCanvas(GcodeFileReader gcodeFileReader) {
         try {
-            gcodeFileReader = new GcodeFileReader("C:\\Users\\Szymon\\Desktop\\3DBenchy.gcode");
+            this.gcodeFileReader = gcodeFileReader;
             gcodeFileReader.parseAllLines();
             lines = gcodeFileReader.getLines();
 
@@ -40,19 +60,6 @@ public class SimpleGLCanvas implements GLEventListener {
             double z = Math.abs(gcodeFileReader.getMin().getZ()) + Math.abs(gcodeFileReader.getMax().getZ());
             scaleFactor =  Math.max(x, Math.max(y, z));
 
-//            System.out.println(lines);
-
-            //save to file
-            try {
-                File file = new File("C:\\Users\\Szymon\\Desktop\\3DBenchy.out");
-                FileWriter fileWriter = new FileWriter(file);
-                for (Line line : lines) {
-                    fileWriter.write(line.getStart().getX() + " " + line.getStart().getY() + " " + line.getStart().getZ() + " " + line.getEnd().getX() + " " + line.getEnd().getY() + " " + line.getEnd().getZ() + "\n");
-                }
-                fileWriter.close();
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -95,13 +102,38 @@ public class SimpleGLCanvas implements GLEventListener {
         // Start drawing lines
         gl.glBegin(GL2.GL_LINES);
         gl.glLineWidth(20.0f);
+        if(drawMode == DRAW_MODE.ALL) {
+            for (Line ls : lines) {
+                if (!ls.checkIfTheSameZ())
+                    continue;
+                gl.glColor3f(1.0f, 1.0f, 1.0f);  // Set color (white)
+                gl.glVertex3f(ls.getStart().getX(), ls.getStart().getY(), ls.getStart().getZ());
+                gl.glVertex3f(ls.getEnd().getX(), ls.getEnd().getY(), ls.getEnd().getZ());
+            }
+        } else if (drawMode == DRAW_MODE.ONE_LAYER) {
+            int layerStart = gcodeFileReader.getLayerIndex(oneLayer);
+            int layerEnd = gcodeFileReader.getLayerIndex(oneLayer + 1);
+            for (int i = layerStart; i < layerEnd; i++) {
+                Line ls = lines.get(i);
+                if (!ls.checkIfTheSameZ())
+                    continue;
+                gl.glColor3f(1.0f, 1.0f, 1.0f);  // Set color (white)
+                gl.glVertex3f(ls.getStart().getX(), ls.getStart().getY(), ls.getStart().getZ());
+                gl.glVertex3f(ls.getEnd().getX(), ls.getEnd().getY(), ls.getEnd().getZ());
+            }
+        } else if (drawMode == DRAW_MODE.RANGE_OF_LAYERS) {
+            int layerStart = gcodeFileReader.getLayerIndex(rangeOfLayers[0]);
+            int layerEnd = gcodeFileReader.getLayerIndex(rangeOfLayers[1]);
+            for (int i = layerStart; i < layerEnd; i++) {
+                Line ls = lines.get(i);
+                if (!ls.checkIfTheSameZ())
+                    continue;
+                gl.glColor3f(1.0f, 1.0f, 1.0f);  // Set color (white)
+                gl.glVertex3f(ls.getStart().getX(), ls.getStart().getY(), ls.getStart().getZ());
+                gl.glVertex3f(ls.getEnd().getX(), ls.getEnd().getY(), ls.getEnd().getZ());
+            }
 
-        for (Line ls : lines) {
-            if(!ls.checkIfTheSameZ())
-                continue;
-            gl.glColor3f(1.0f, 1.0f, 1.0f);  // Set color (white)
-            gl.glVertex3f(ls.getStart().getX(), ls.getStart().getY(), ls.getStart().getZ());
-            gl.glVertex3f(ls.getEnd().getX(), ls.getEnd().getY(), ls.getEnd().getZ());
+
         }
 
         gl.glEnd();  // End drawing
