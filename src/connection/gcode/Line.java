@@ -4,9 +4,6 @@ public class Line {
     private Point start;
     private Point end;
 
-    //
-    private boolean isIdleMove = false;
-
     public Line(Point start, Point end) {
         this.start = start;
         this.end = end;
@@ -33,11 +30,11 @@ public class Line {
     }
 
     public boolean isIdleMove() {
-        return isIdleMove;
+        return end.isEndOfIdleMove();
     }
 
     public void setIdleMove(boolean idleMove) {
-        isIdleMove = idleMove;
+        end.setEndOfIdleMove(idleMove);
     }
 
     @Override

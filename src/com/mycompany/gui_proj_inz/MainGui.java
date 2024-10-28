@@ -10,6 +10,7 @@ import com.jogamp.opengl.awt.GLJPanel;
 import connection.ControlPrinter;
 import connection.gcode.GcodeFileReader;
 import connection.gcode.GcodeObject;
+import connection.gcode.Point;
 import connection.gcode.previewer.SimpleGLCanvas;
 import connection.transmiter.BaseTransmHandler;
 import connection.PrinterSettings;
@@ -64,6 +65,7 @@ public class MainGui extends javax.swing.JFrame {
         glCanvas = new GLJPanel(capabilities);
         oneLayerCheckBox.addActionListener(this::oneLayerCheckBoxActionPerformed);
         rangeLayerCheckBox.addActionListener(this::rangeLayerCheckBoxActionPerformed);
+        idleMoveCheckBox.addActionListener(this::idleMoveCheckBoxActionPerformed);
         //rotation
         this.addKeyListener(new KeyListener() {
             @Override
@@ -88,6 +90,19 @@ public class MainGui extends javax.swing.JFrame {
                         break;
                     case KeyEvent.VK_DOWN:
                         renderer.getRotation().setY(renderer.getRotation().getY() + DELTA_SIZE);
+                        break;
+                    case KeyEvent.VK_W:
+                        Point eye = renderer.getEye();
+                        renderer.setEye(new Point(renderer.getEye().getX(), renderer.getEye().getY(), renderer.getEye().getZ() + DELTA_SIZE));
+                        break;
+                    case KeyEvent.VK_S:
+                        renderer.setEye(new Point(renderer.getEye().getX(), renderer.getEye().getY(), renderer.getEye().getZ() - DELTA_SIZE));
+                        break;
+                    case KeyEvent.VK_A:
+                        renderer.setEye(new Point(renderer.getEye().getX() - DELTA_SIZE, renderer.getEye().getY(), renderer.getEye().getZ()));
+                        break;
+                    case KeyEvent.VK_D:
+                        renderer.setEye(new Point(renderer.getEye().getX() + DELTA_SIZE, renderer.getEye().getY(), renderer.getEye().getZ()));
                         break;
                     default:
                         break;
@@ -212,6 +227,8 @@ public class MainGui extends javax.swing.JFrame {
         secondRangeSlider = new JSlider();
         oneLayerCheckBox = new JCheckBox();
         rangeLayerCheckBox = new JCheckBox();
+        menuItemStop = new JMenuItem();
+        menuItemResume = new JMenuItem();
 
         setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
         BorderLayout gcodePreviewPanelLayout = new BorderLayout();
@@ -405,7 +422,24 @@ public class MainGui extends javax.swing.JFrame {
                 menuItemPauzaActionPerformed(evt);
             }
         });
+        menuItemResume.setText("Wznów");
+        menuItemResume.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent evt) {
+                menuItemResumeActionPerformed(evt);
+            }
+        });
+
+        menuItemStop.setText("Stop");
+        menuItemStop.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent evt) {
+                menuItemStopActionPerformed(evt);
+            }
+        });
+
+
         menuDruk.add(menuItemPauza);
+        menuDruk.add(menuItemResume);
+        menuDruk.add(menuItemStop);
 
         jMenuBar1.add(menuDruk);
 
@@ -575,6 +609,15 @@ public class MainGui extends javax.swing.JFrame {
 
     }
 
+    private void idleMoveCheckBoxActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_extTempCheckBoxActionPerformed
+        updateVisibilityOnConnection();
+        if(idleMoveCheckBox.isSelected())
+            renderer.setIdleMoves(true);
+        else
+            renderer.setIdleMoves(false);
+
+    }//GEN-LAST:event_extTempCheckBoxActionPerformed
+
     private void extTempCheckBoxActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_extTempCheckBoxActionPerformed
         updateVisibilityOnConnection();
         if(extTempCheckBox.isSelected())
@@ -601,16 +644,16 @@ public class MainGui extends javax.swing.JFrame {
     }//GEN-LAST:event_fanCheckBoxActionPerformed
 
     private void connectButtonActionPerformed(java.awt.event.ActionEvent evt) {
-        //check if is pressed
         if (connectButton.isSelected()) {
             try {
                 if (baseTransmHandler != null) {
                     baseTransmHandler.disconnect();
                 }
-                //connect to the printer
+                if (controlPrinter != null) {
+                    controlPrinter.stopTemperatureThread();
+                }
                 baseTransmHandler = new BaseTransmHandler(printerSettings);
                 controlPrinter = new ControlPrinter(baseTransmHandler, printerSettings);
-                //update the temperature labels
                 controlPrinter.startTemperatureThread(
                         temp -> {
                             actualTempExt = temp;
@@ -621,7 +664,6 @@ public class MainGui extends javax.swing.JFrame {
                             updatedTempLabels();
                         }
                 );
-                //autoscroll
                 baseTransmHandler.getResponseList().setCallback(() -> {
                     jScrollPane1.getVerticalScrollBar().setValue(jScrollPane1.getVerticalScrollBar().getMaximum() + 1);
                     return null;
@@ -638,10 +680,12 @@ public class MainGui extends javax.swing.JFrame {
                 if (baseTransmHandler != null) {
                     baseTransmHandler.disconnect();
                 }
+                if (controlPrinter != null) {
+                    controlPrinter.stopTemperatureThread();
+                }
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
-            controlPrinter.stopTemperatureThread();
             baseTransmHandler = null;
             controlPrinter = null;
         }
@@ -712,15 +756,14 @@ public class MainGui extends javax.swing.JFrame {
                 }
             }
             renderer = new SimpleGLCanvas(gcodeFileReader);
+            renderer.setEye(gcodeFileReader.getCenter());
             glCanvas.addGLEventListener(renderer);
             gcodePreviewPanel.add(glCanvas, java.awt.BorderLayout.CENTER);
             animator = new FPSAnimator(glCanvas, 60);
             animator.start();
             gcodePreviewPanel.setVisible(true);
 
-
-            this.setFocusable(true);
-            this.requestFocusInWindow();
+            focus();
             glCanvas.display();
             gcodePreviewPanel.revalidate();
             gcodePreviewPanel.repaint();
@@ -749,12 +792,32 @@ public class MainGui extends javax.swing.JFrame {
         fanLabel.setText((actualFanSpeed != null ? actualFanSpeed.toString()   : "-- " ) + "/" + (desiredFanSpeed != null ? desiredFanSpeed.toString() : "--"));
     }
 
+
     private void menuItemStartDrukuActionPerformed(java.awt.event.ActionEvent evt) {
-        // TODO add your handling code here:
+        if (controlPrinter != null && gcodeFileReader != null) {
+            controlPrinter.streamFile(gcodeFileReader);
+        }
+        else {
+            System.out.println("Printer not connected or file not loaded");
+        }
     }
 
     private void menuItemPauzaActionPerformed(java.awt.event.ActionEvent evt) {
-        // TODO add your handling code here:
+        if (baseTransmHandler != null) {
+            baseTransmHandler.pauseSending();
+        }
+
+    }
+
+    private void menuItemStopActionPerformed(java.awt.event.ActionEvent evt) {
+
+    }
+
+    private void menuItemResumeActionPerformed(java.awt.event.ActionEvent evt) {
+        if (baseTransmHandler != null) {
+            baseTransmHandler.resumeSending();
+        }
+
     }
 
     private void oneLayerCheckBoxActionPerformed(java.awt.event.ActionEvent evt) {
@@ -795,16 +858,21 @@ public class MainGui extends javax.swing.JFrame {
         extTempSlider.setEnabled(extTempCheckBox.isSelected());
         bedTempSlider.setEnabled(bedTempCheckBox.isSelected());
         fanSlider.setEnabled(fanCheckBox.isSelected());
+        menuItemPauza.setEnabled(isConnected);
+        menuItemStartDruku.setEnabled(isConnected);
+        menuItemStop.setEnabled(isConnected);
+        menuItemResume.setEnabled(isConnected);
         focus();
     }
 
     private void updateVisibilityOnFileLoad(){
         boolean isFileLoaded = gcodeFileReader != null;
         System.out.println("File loaded: " + isFileLoaded);
+        menuItemStartDruku.setEnabled(isFileLoaded);
         oneLayerCheckBox.setEnabled(isFileLoaded);
         rangeLayerCheckBox.setEnabled(isFileLoaded);
         idleMoveCheckBox.setEnabled(isFileLoaded);
-
+        idleMoveCheckBox.setSelected(false);
         focus();
     }
 
@@ -856,6 +924,9 @@ public class MainGui extends javax.swing.JFrame {
     private javax.swing.JMenuItem menuItemHomeY;
     private javax.swing.JMenuItem menuItemHomeZ;
     private javax.swing.JMenuItem menuItemSendM84;
+    private javax.swing.JMenuItem menuItemStop;
+    private javax.swing.JMenuItem menuItemResume;
+
 
     public static void main(String[] args) {
         for (UIManager.LookAndFeelInfo info : UIManager.getInstalledLookAndFeels()) {

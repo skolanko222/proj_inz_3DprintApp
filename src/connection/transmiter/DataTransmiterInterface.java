@@ -7,5 +7,6 @@ public interface DataTransmiterInterface {
     boolean isConnected();
     void disconnect() throws Exception;
     void queueCommand(GcodeObject command);
+    void sendCommandImidietly(GcodeObject command);
     GcodeObject dequeueCommand();
 }

@@ -11,7 +11,6 @@ public class SerialPortDataSender implements Runnable, SerialPortDataListener{
     private final SerialPort serialPort;
     private static final Logger logger = Logger.getLogger(SerialPortDataSender.class.getName());
     private final BaseTransmHandler transmHandler;
-    private final Object lock = new Object();
 
     public SerialPortDataSender(SerialPort serialPort, BaseTransmHandler transmHandler) {
         if(serialPort == null){
@@ -26,10 +25,6 @@ public class SerialPortDataSender implements Runnable, SerialPortDataListener{
         serialPort.writeBytes(data.getCommand().getBytes(), data.getCommand().getBytes().length);
     }
 
-    public void sendImid(String command) {
-        logger.finest("[connection.connect.SerialPortDataSender] Sending now " + command);
-        serialPort.writeBytes(command.getBytes(), command.getBytes().length);
-    }
 
     @Override
     public int getListeningEvents() {
@@ -47,24 +42,58 @@ public class SerialPortDataSender implements Runnable, SerialPortDataListener{
         GcodeObject response = transmHandler.dequeueResponse();
         String receivedData = new String(buffer, 0, len);
         response.setResponse(receivedData);
-        System.out.println("Response: " + response.getResponse());
+//        System.out.println("Response: " + response.getResponse());
         if(response.isResponse())
             transmHandler.getResponseList().addElement(response.getCommand() + " -> " + response.getResponse());
+            logger.info("[handleReceivedData] Read " + buffer.length + " bytes. \n\n" + response.toString());
+            System.out.println("commands size: " + transmHandler.getQueueSize());
+            System.out.println("responses size: " + transmHandler.getResponseQueueSize());
         if(response.getCallback() != null) {
-            System.out.println("Callback");
+//            System.out.println("Callback");
             response.getCallback().accept(receivedData);
-            System.out.println("Callback end");
+//            System.out.println("Callback end");
         }
 
 
-        logger.info("[handleReceivedData] Read " + buffer.length + " bytes. \n" + response.toString());
+    }
+
+    private final Object lock = new Object();
+    private boolean pause = false;
+
+    public void pause() {
+        synchronized (lock) {
+            pause = true;
+        }
+    }
+
+    // Metoda do wznowienia wątku
+    public void resume() {
+        synchronized (lock) {
+            pause = false;
+            lock.notify();  // Powiadomienie, że wątek może kontynuować pracę
+        }
+    }
+
+    public boolean isPaused() {
+        return pause;
     }
 
     @Override
     public void run() {
-        while (true) {
+        while (!Thread.currentThread().isInterrupted()) {
             if(!transmHandler.isQueueEmpty() && transmHandler.isResponseQueueEmpty()){
                 send();
+            }
+
+            synchronized (lock) {
+                while (pause) {
+                    try {
+                        System.out.println("Wątek jest zatrzymany, czekam...");
+                        lock.wait();  // Wątek czeka, aż zostanie powiadomiony
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
             }
         }
     }

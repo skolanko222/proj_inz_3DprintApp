@@ -78,6 +78,8 @@ public class ParametryDrukarkiForm extends javax.swing.JFrame {
                 onClose();
             }
         });
+        //set default witdth and height
+        setSize(800, 600);
 
     }
 

@@ -5,9 +5,10 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Objects;
 
 public class GcodeFileReader implements AutoCloseable {
-    private final BufferedReader reader;
+    private BufferedReader reader;
     private final File file;
     private Point center = new Point(0, 0, 0);
     private Point max = new Point(0, 0, 0);
@@ -20,26 +21,23 @@ public class GcodeFileReader implements AutoCloseable {
     public Integer getLayerAmount() {
         return layerAmount;
     }
-
     private Integer layerAmount = null;
 
-    // Konstruktor przyjmujący obiekt File
-    public GcodeFileReader(String path) throws IOException {
-        this.file = new File(path);
-        this.reader = new BufferedReader(new FileReader(file));
-    }
 
     public GcodeFileReader(File fileOb) throws IOException {
         this.file = new File(fileOb.getAbsolutePath());
         this.reader = new BufferedReader(new FileReader(file));
     }
 
-    // Metoda do wczytywania kolejnej linii z pliku
-    private String readNextLine() throws IOException {
+    public String readNextLine() throws IOException {
         return reader.readLine();
     }
 
-    // Zamknięcie czytnika
+    public void reset() throws IOException {
+        reader.close();
+        reader = new BufferedReader(new FileReader(file));
+    }
+
     @Override
     public void close() throws IOException {
         if (reader != null) {
@@ -66,11 +64,10 @@ public class GcodeFileReader implements AutoCloseable {
 
     public GcodeFileReader parseAllLines() {
         String[] words;
-        Point lastPoint = new Point(0, 0, 0);
-        Point currentPoint = new Point(0, 0, 0);
+        Point lastPoint = null;
+        Point currentPoint = null;
         while ((words = parseNextLine()) != null) {
             int length = words.length;
-            boolean isIdleMove = false;
 
             //find layer count, check until it is found
             if(layerAmount == null) {
@@ -79,57 +76,61 @@ public class GcodeFileReader implements AutoCloseable {
             //find layer number
             findLayerNumber(words);
 
-            //typical G1 command (move in XY planes)
-            if(length > 0 && words[0].equals("G1") || words[0].equals("G0")) {
-                if (awaitLayerStart) { // layer starts with G1/G0 command
-                    layerStarts[layerCounter - 1] = lines.size();
-                    awaitLayerStart = false;
-                }
-                Float x = null, y = null, z = null;
+            currentPoint = readPoint(words, lastPoint);
+            if(lastPoint == null) {
+                lastPoint = currentPoint;
+                continue;
+            }
+            Line line = new Line(lastPoint, currentPoint);
+            lines.add(line);
+
+            lastPoint = currentPoint;
+    }
+        if(layerAmount == null) {
+            throw new RuntimeException("Layer count not found");
+        }
+        calculateAll();
+        System.out.println("Center: " + center);
+        System.out.println("Max: " + max);
+        System.out.println("Min: " + min);
+        return this;
+    }
+
+    private Point readPoint(String[] words, Point lastPoint) {
+        if(lastPoint == null) {
+            lastPoint = new Point(0, 0, 0);
+            System.out.println("Last point is null");
+        }
+        int length = words.length;
+        Point currentPoint = lastPoint.copy();
+        if(length > 0 && words[0].equals("G1") || words[0].equals("G0")) {
+            if (awaitLayerStart) { // layer starts with G1/G0 command
+                layerStarts[layerCounter - 1] = lines.size();
+                awaitLayerStart = false;
+            }
+            Float x = null, y = null, z = null;
                 for (int i = 1; i < length; i++) {
                     String word = words[i];
                     if (word.startsWith("X")) {
                         x = Float.parseFloat(word.substring(1));
                     } else if (word.startsWith("Y")) {
                         y = Float.parseFloat(word.substring(1));
-                    } else if (word.startsWith("Z")) { //move in Z axis, not typical
+                    } else if (word.startsWith("Z")) {
                         z = Float.parseFloat(word.substring(1));
+                    } else if (word.startsWith("E")) {
+                        currentPoint.setEndOfIdleMove(false);
                     }
-                    else if (word.startsWith("E")) {
-                        isIdleMove = true;
-                    }
-                }
-                if (x == null) {
-                    x = lastPoint.getX();
-                }
-                if (y == null) {
-                    y = lastPoint.getY();
-                }
-                if (z == null) {
-                    z = lastPoint.getZ();
                 }
 
-                currentPoint = new Point(x, y, z);
-                Line line = new Line(lastPoint, currentPoint);
-                line.setIdleMove(isIdleMove);
-                if (isIdleMove){
-//                    System.out.println("Idle move: " + Arrays.toString(words));
-                    lines.add(line);
-                }
-                else {
-//                    System.out.println("Normal move: " + Arrays.toString(words));
-                }
-                lastPoint = currentPoint;
-            }
+            currentPoint.setX(Objects.requireNonNullElseGet(x, lastPoint::getX));
+            currentPoint.setY(Objects.requireNonNullElseGet(y, lastPoint::getY));
+            currentPoint.setZ(Objects.requireNonNullElseGet(z, lastPoint::getZ));
         }
-        if(layerAmount == null) {
-            throw new RuntimeException("Layer count not found");
-        }
-        calculateAll();
-        return this;
+        return currentPoint;
     }
+
     private void calculateAll() {
-        for(Line line : getLines()) {
+        for(Line line : getLines().subList(1, getLines().size())) {
             calculateMinMax(line.getStart());
             calculateMinMax(line.getEnd());
         }
@@ -137,13 +138,10 @@ public class GcodeFileReader implements AutoCloseable {
 
     }
 
-
     private void calculateCenter() {
-        for(Line line : getLines()) {
-            center.setX((line.getStart().getX() + center.getX()) / 2);
-            center.setY((line.getStart().getY() + center.getY()) / 2);
-            center.setZ((line.getStart().getZ() + center.getZ()) / 2);
-        }
+        center.setX((max.getX() + min.getX()) / 2);
+        center.setY((max.getY() + min.getY()) / 2);
+        center.setZ((max.getZ() + min.getZ()) / 2);  
     }
 
     private void calculateMinMax(Point point) {
@@ -204,19 +202,4 @@ public class GcodeFileReader implements AutoCloseable {
             return layerStarts[layer];
     }
 
-
-    public static void main(String[] args) {
-        try {
-            GcodeFileReader gcodeReader = new GcodeFileReader("C:\\Users\\Szymon\\Desktop\\ta.gcode");
-
-            // Czytanie pliku linijka po linijce
-            ArrayList<Line> lines = gcodeReader.parseAllLines().getLines();
-            System.out.println("Number of lines: " + lines.size());
-
-            // Zamknięcie czytnika
-            gcodeReader.close();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
 }

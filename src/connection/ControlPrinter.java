@@ -1,9 +1,14 @@
 package connection;
 
+import connection.gcode.GcodeFileReader;
 import connection.gcode.GcodeObject;
 import connection.transmiter.DataTransmiterInterface;
 
 import javax.swing.*;
+import java.io.BufferedReader;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.IOException;
 import java.util.function.Consumer;
 import java.util.logging.Logger;
 
@@ -11,9 +16,9 @@ public class ControlPrinter {
     private final DataTransmiterInterface dataTransmiter;
     private final PrinterSettings printerSettings;
     //xyz coordinates
-    private Integer x = null;
-    private Integer y = null;
-    private Integer z = null;
+    private Float x = null;
+    private Float y = null;
+    private Float z = null;
 
     //temperature
     private Float extruderTemp = null;
@@ -45,7 +50,7 @@ public class ControlPrinter {
 
         int updateTemperatureInterval = printerSettings.getCheckTempInterval();
         temperatureThread = new Thread(() -> {
-            while (true) {
+            while (!Thread.currentThread().isInterrupted()) {
                 try {
                     Thread.sleep(updateTemperatureInterval * 1000);
                     updateTemperature();
@@ -61,27 +66,36 @@ public class ControlPrinter {
         temperatureThread.start();
     }
     public void stopTemperatureThread() {
-        temperatureThread.interrupt();
+        if (temperatureThread != null && temperatureThread.isAlive()) {
+            temperatureThread.interrupt();
+            try {
+                temperatureThread.join(1000); // Wait for the thread to terminate
+            } catch (InterruptedException e) {
+                Logger.getLogger(ControlPrinter.class.getName()).severe("Failed to stop temperature thread");
+            }
+        }
     }
 
     public void setDesiredExtrTemp(float extruderTemp) {
-        sendCommand(GcodeObject.prepareCommand("M104 S" + extruderTemp + "\n", false, null));
+        sendCommandImmediately(GcodeObject.prepareCommand("M104 S" + extruderTemp + "\n", false, null));
     }
     public void setDesiredBedTemp(float bedTemp) {
-        sendCommand(GcodeObject.prepareCommand("M140 S" + bedTemp + "\n", false, null));
+        sendCommandImmediately(GcodeObject.prepareCommand("M140 S" + bedTemp + "\n", false, null));
     }
     public void setFanSpeed(int speed) {
-        sendCommand(GcodeObject.prepareCommand("M106 S" + speed + "\n", false, null));
+        if(speed < 0 || speed > 100) {
+            throw new IllegalArgumentException("Speed must be between 0 and 100");
+        }
+        //convert to 0-255
+        speed = (int) (speed * 2.55);
+        sendCommandImmediately(GcodeObject.prepareCommand("M106 S" + speed + "\n", false, null));
     }
 
-
-
     private void updateTemperature() {
-        sendCommand(GcodeObject.prepareCommand("M105\n", false, (a) -> {
+        sendCommandImmediately(GcodeObject.prepareCommand("M105\n", false, (a) -> {
             String[] split = a.split(" ");
             for (String s : split) {
                 try{
-                    System.out.println(s);
                     if (s.startsWith("T")) {
                         extruderTemp = Float.parseFloat(s.substring(2));
                         extruderTempLabel.accept(extruderTemp);
@@ -100,33 +114,53 @@ public class ControlPrinter {
         if (distance == 0) {
             return;
         }
-        sendCommand(GcodeObject.prepareCommand("G91", false, null));
+        queueComman(GcodeObject.prepareCommand("G91", false, null));
         String command = "G1 " + axis.name() + distance + " F" + printerSettings.getSpeed() + "\n";
-        sendCommand(GcodeObject.prepareCommand(command, true, null));
-        sendCommand(GcodeObject.prepareCommand("G90", false, null));
-        sendCommand(GcodeObject.prepareCommand("M105", true, null));
+        queueComman(GcodeObject.prepareCommand(command, true, null));
+        queueComman(GcodeObject.prepareCommand("G90", false, null));
+        queueComman(GcodeObject.prepareCommand("M105", true, null));
     }
 
     public void homeAxis(PrinterAxis axis) {
         String command = "G28 " + axis.name() + "\n";
-        sendCommand(GcodeObject.prepareCommand(command, true, null));
+        queueComman(GcodeObject.prepareCommand(command, true, null));
     }
 
     public void homeAllAxis() {
-        sendCommand(GcodeObject.prepareCommand("G28\n", true, (a) -> {
-            this.x = 0;
-            this.y = 0;
-            this.z = 0;
-            System.out.println("Homed all axis");
+        queueComman(GcodeObject.prepareCommand("G28\n", true, (a) -> {
+            this.x = 0F;
+            this.y = 0F;
+            this.z = 0F;
         }));
     }
 
     public void releaseMotors() {
-        sendCommand(GcodeObject.prepareCommand("M84\n", true, null));
+        queueComman(GcodeObject.prepareCommand("M84\n", true, null));
     }
 
-    private void sendCommand(GcodeObject command) {
+
+    public void streamFile(GcodeFileReader gcodeFileReader) {
+        try {
+            gcodeFileReader.reset();
+            String line = gcodeFileReader.readNextLine();
+            while (line != null) {
+                String finalLine = line;
+                queueComman(GcodeObject.prepareCommand(line, false, null));
+                line = gcodeFileReader.readNextLine();
+            }
+
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
+    }
+
+
+    private void queueComman(GcodeObject command) {
         dataTransmiter.queueCommand(command);
+    }
+    private void sendCommandImmediately(GcodeObject command) {
+        dataTransmiter.sendCommandImidietly(command);
     }
 
 

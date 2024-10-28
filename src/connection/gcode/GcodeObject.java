@@ -17,9 +17,9 @@ public class GcodeObject {
 
     public static GcodeObject prepareCommand(String command, boolean isResponse, Consumer<String> cal) throws IllegalArgumentException {
         // check if starts with ;
-        if (command.startsWith(";")) {
-            throw new IllegalArgumentException("Tried to send comment.");
-        }
+//        if (command.startsWith(";")) {
+//            throw new IllegalArgumentException("Tried to send comment.");
+//        }
         // delete comments
         if (command.contains(";")) {
             command = command.substring(0, command.indexOf(";"));

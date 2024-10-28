@@ -18,7 +18,12 @@ public class SimpleGLCanvas implements GLEventListener {
     GcodeFileReader gcodeFileReader;
     ArrayList<Line> lines;
     private Point rotation = new Point(0, 0, 0);
-    private Point eye = new Point(0, 0, 10);
+
+    public void setEye(Point eye) {
+        this.eye = eye;
+    }
+
+    private Point eye = new Point(0, 0, 0);
     float aspect = 1.0F;
 
     private GLU glu;
@@ -29,6 +34,12 @@ public class SimpleGLCanvas implements GLEventListener {
 
     private int oneLayer = 0;
     private int [] rangeOfLayers = null;
+    private boolean idleMoves = false;
+
+    public Point getEye() {
+        return new Point(eye.getX(), eye.getY(), eye.getZ());
+    }
+
     public enum DRAW_MODE {
         ALL,
         ONE_LAYER,
@@ -37,6 +48,9 @@ public class SimpleGLCanvas implements GLEventListener {
     public void setDrawModeOneLayer(int layer) {
         this.drawMode = DRAW_MODE.ONE_LAYER;
         this.oneLayer = layer;
+    }
+    public void setIdleMoves(boolean idleMoves) {
+        this.idleMoves = idleMoves;
     }
 
     public void setDrawModeRangeOfLayers(int [] layers) {
@@ -103,40 +117,33 @@ public class SimpleGLCanvas implements GLEventListener {
         gl.glBegin(GL2.GL_LINES);
         gl.glLineWidth(20.0f);
         if(drawMode == DRAW_MODE.ALL) {
-            for (Line ls : lines) {
-                if (!ls.checkIfTheSameZ())
-                    continue;
-                gl.glColor3f(1.0f, 1.0f, 1.0f);  // Set color (white)
-                gl.glVertex3f(ls.getStart().getX(), ls.getStart().getY(), ls.getStart().getZ());
-                gl.glVertex3f(ls.getEnd().getX(), ls.getEnd().getY(), ls.getEnd().getZ());
-            }
+            drawLines(gl, 0, lines.size());
         } else if (drawMode == DRAW_MODE.ONE_LAYER) {
             int layerStart = gcodeFileReader.getLayerIndex(oneLayer);
             int layerEnd = gcodeFileReader.getLayerIndex(oneLayer + 1);
-            for (int i = layerStart; i < layerEnd; i++) {
-                Line ls = lines.get(i);
-                if (!ls.checkIfTheSameZ())
-                    continue;
-                gl.glColor3f(1.0f, 1.0f, 1.0f);  // Set color (white)
-                gl.glVertex3f(ls.getStart().getX(), ls.getStart().getY(), ls.getStart().getZ());
-                gl.glVertex3f(ls.getEnd().getX(), ls.getEnd().getY(), ls.getEnd().getZ());
-            }
+            drawLines(gl, layerStart, layerEnd);
         } else if (drawMode == DRAW_MODE.RANGE_OF_LAYERS) {
             int layerStart = gcodeFileReader.getLayerIndex(rangeOfLayers[0]);
             int layerEnd = gcodeFileReader.getLayerIndex(rangeOfLayers[1]);
-            for (int i = layerStart; i < layerEnd; i++) {
-                Line ls = lines.get(i);
-                if (!ls.checkIfTheSameZ())
-                    continue;
-                gl.glColor3f(1.0f, 1.0f, 1.0f);  // Set color (white)
-                gl.glVertex3f(ls.getStart().getX(), ls.getStart().getY(), ls.getStart().getZ());
-                gl.glVertex3f(ls.getEnd().getX(), ls.getEnd().getY(), ls.getEnd().getZ());
-            }
-
+            drawLines(gl, layerStart, layerEnd);
 
         }
 
         gl.glEnd();  // End drawing
+    }
+
+    private void drawLines(GL2 gl, int layerStart, int layerEnd) {
+        for (int i = layerStart; i < layerEnd; i++) {
+            Line ls = lines.get(i);
+            if (!ls.checkIfTheSameZ() || (!idleMoves && ls.isIdleMove()))
+                continue;
+            if(ls.isIdleMove())
+                gl.glColor3f(0.0f, 1.0f, 0.0f);  // Set color (green)
+            else
+                gl.glColor3f(1.0f, 1.0f, 1.0f);  // Set color (white)
+            gl.glVertex3f(ls.getStart().getX(), ls.getStart().getY(), ls.getStart().getZ());
+            gl.glVertex3f(ls.getEnd().getX(), ls.getEnd().getY(), ls.getEnd().getZ());
+        }
     }
 
     @Override
