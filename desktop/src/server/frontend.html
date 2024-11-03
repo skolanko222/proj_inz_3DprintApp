@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+    <meta charset="UTF-8">
+    <title>WebSocket Client</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.5.1/sockjs.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
+</head>
+<body>
+<h2>WebSocket Client for Printer Status</h2>
+
+<div>
+    <button onclick="sendStatus()">Send Status</button>
+    <button onclick="sendCommand()">Send Command</button>
+</div>
+
+<div id="statusDisplay"></div>
+
+<script type="text/javascript">
+    var stompClient = null;
+
+    function connect() {
+    var socket = new SockJS('/ws');
+    stompClient = Stomp.over(socket);
+
+    stompClient.connect({}, function (frame) {
+    console.log('Connected: ' + frame);
+
+    // Subscribe to the /topic/status to receive printer status updates
+    stompClient.subscribe('/topic/status', function (statusUpdate) {
+    showStatus(JSON.parse(statusUpdate.body));
+});
+});
+}
+
+    function showStatus(status) {
+    document.getElementById("statusDisplay").innerHTML =
+        "<p>Temperature: " + status.temperature + "</p>" +
+        "<p>Position: " + status.position + "</p>" +
+        "<p>Status Message: " + status.statusMessage + "</p>";
+}
+
+    function sendStatus() {
+    var status = {
+    temperature: 200,
+    position: "X10 Y20 Z30",
+    statusMessage: "Printing"
+};
+    stompClient.send("/app/status", {}, JSON.stringify(status));
+}
+
+    function sendCommand() {
+    var command = {
+    command: "PAUSE",
+    parameters: "none"
+};
+    stompClient.send("/app/command", {}, JSON.stringify(command));
+}
+
+    connect();
+</script>
+</body>
+</html>
