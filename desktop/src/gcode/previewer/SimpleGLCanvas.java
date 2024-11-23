@@ -15,15 +15,20 @@ import static com.jogamp.opengl.fixedfunc.GLMatrixFunc.GL_MODELVIEW;
 import static com.jogamp.opengl.fixedfunc.GLMatrixFunc.GL_PROJECTION;
 
 public class SimpleGLCanvas implements GLEventListener {
+
+    public static final Point DEFAULT_ROTATION = new Point(-90, 0, 0);
+    public static final Point DEFAULT_EYE = new Point(-90, 0, 0);
+
+
     GcodeFileReader gcodeFileReader;
     ArrayList<Line> lines;
-    private Point rotation = new Point(0, 0, 0);
+    private Point rotation = DEFAULT_EYE;
 
     public void setEye(Point eye) {
         this.eye = eye;
     }
 
-    private Point eye = new Point(0, 0, 0);
+    private Point eye = DEFAULT_ROTATION;
     float aspect = 1.0F;
 
     private GLU glu;
@@ -105,9 +110,6 @@ public class SimpleGLCanvas implements GLEventListener {
             gl.glRotated(this.rotation.getX(), 0.0, 1.0, 0.0);
             gl.glRotated(this.rotation.getY(), 1.0, 0.0, 0.0);
             gl.glTranslated(-eye.getX() - gcodeFileReader.getCenter().getX(), -eye.getY() - gcodeFileReader.getCenter().getY(), -eye.getZ() - gcodeFileReader.getCenter().getZ());
-        } else {
-            // Shift model to center of window.
-            gl.glTranslated(-gcodeFileReader.getCenter().getX(), -gcodeFileReader.getCenter().getY(), 0);
         }
 
         // Clear color and depth buffers
@@ -115,7 +117,6 @@ public class SimpleGLCanvas implements GLEventListener {
 
         // Start drawing lines
         gl.glBegin(GL2.GL_LINES);
-        gl.glLineWidth(20.0f);
         if(drawMode == DRAW_MODE.ALL) {
             drawLines(gl, 0, lines.size());
         } else if (drawMode == DRAW_MODE.ONE_LAYER) {
@@ -128,7 +129,6 @@ public class SimpleGLCanvas implements GLEventListener {
             drawLines(gl, layerStart, layerEnd);
 
         }
-
         gl.glEnd();  // End drawing
     }
 
@@ -185,23 +185,6 @@ public class SimpleGLCanvas implements GLEventListener {
             gl.glOrtho(-0.51*this.aspect,0.51*this.aspect,-0.51,0.51,-10,10);
             gl.glMatrixMode(GL_MODELVIEW);
             gl.glLoadIdentity();
-        } else {
-            gl.glEnable(GL.GL_DEPTH_TEST);
-
-            // Setup perspective projection, with aspect ratio matches viewport
-            gl.glMatrixMode(GL_PROJECTION);  // choose projection matrix
-            gl.glLoadIdentity();             // reset projection matrix
-
-            glu.gluPerspective(45.0, this.aspect, 0.1, 100.0); // fovy, aspect, zNear, zFar
-            // Move camera out and point it at the origin
-            glu.gluLookAt(this.eye.getX(),  this.eye.getY(),  this.eye.getZ(),
-                    0, 0, 0,
-                    0, 1, 0);
-
-            // Enable the model-view transform
-            gl.glMatrixMode(GL_MODELVIEW);
-            gl.glLoadIdentity(); // reset
-
         }
     }
 
@@ -243,6 +226,9 @@ public class SimpleGLCanvas implements GLEventListener {
 
     public Point getRotation() {
         return rotation;
+    }
+    public void setRotation(Point rotation) {
+        this.rotation = rotation;
     }
 
 

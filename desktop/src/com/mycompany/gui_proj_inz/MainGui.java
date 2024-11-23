@@ -80,7 +80,6 @@ public class MainGui extends javax.swing.JFrame {
                 switch (ke.getKeyCode()) {
                     case KeyEvent.VK_LEFT:
                         renderer.getRotation().setX(renderer.getRotation().getX() - DELTA_SIZE);
-                        System.out.println("X: " + renderer.getRotation().getX());
                         break;
                     case KeyEvent.VK_RIGHT:
                         renderer.getRotation().setX(renderer.getRotation().getX() + DELTA_SIZE);
@@ -104,9 +103,21 @@ public class MainGui extends javax.swing.JFrame {
                     case KeyEvent.VK_D:
                         renderer.setEye(new Point(renderer.getEye().getX() + DELTA_SIZE, renderer.getEye().getY(), renderer.getEye().getZ()));
                         break;
+                    case KeyEvent.VK_R:
+                        renderer.setEye(new Point(renderer.getEye().getX(), renderer.getEye().getY() + DELTA_SIZE, renderer.getEye().getZ()));
+                        break;
+                    case KeyEvent.VK_F:
+                        renderer.setEye(new Point(renderer.getEye().getX(), renderer.getEye().getY() - DELTA_SIZE, renderer.getEye().getZ()));
+                        break;
+                    case KeyEvent.VK_H: //home
+                        renderer.setEye(new Point(0, 0, 0));
+                        renderer.setRotation(new Point(0, 0, 0));
+                        break;
                     default:
                         break;
                 }
+                System.out.println("Eye: " + renderer.getEye().getX() + " " + renderer.getEye().getY() + " " + renderer.getEye().getZ());
+                System.out.println("Rotation: " + renderer.getRotation().getX() + " " + renderer.getRotation().getY() + " " + renderer.getRotation().getZ());
             }
 
             @Override
