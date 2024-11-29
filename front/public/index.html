@@ -28,7 +28,8 @@
             console.log('Connected: ' + frame);
 
             // Subscribe to receive responses from the server
-            stompClient.subscribe('/user/queue/command', function(message) {
+            stompClient.subscribe('/queue/status', function(message) {
+                console.log('Received response: ' + message.body);
                 document.getElementById('response').innerText = "Received response: " + message.body;
             });
         });
@@ -45,6 +46,12 @@
                 printerId: printerId,
                 command: command
             });
+            const register = JSON.stringify({
+                printerId: printerId,
+                status: command
+            });
+            //send plain text of printerId to server /app/registerClient
+            stompClient.send('/app/registerClient', {}, register);
 
             // Send the message to the server at the "/app/command" endpoint
             stompClient.send('/app/command', {}, payload);
