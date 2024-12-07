@@ -6,7 +6,7 @@
       <sourceFolder url="file://$MODULE_DIR$" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/src" isTestSource="false" />
     </content>
-    <orderEntry type="jdk" jdkName="openjdk-22" jdkType="JavaSDK" />
+    <orderEntry type="jdk" jdkName="corretto-17" jdkType="JavaSDK" />
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="library" exported="" name="jSerialComm-2.11.0" level="project" />
     <orderEntry type="library" exported="" name="google.code.gson" level="project" />
@@ -98,6 +98,5 @@
     </orderEntry>
     <orderEntry type="library" name="slf4j.jdk14" level="project" />
     <orderEntry type="library" name="javax.websocket.api" level="project" />
-    <orderEntry type="library" name="glassfish.tyrus.bundles.standalone.client" level="project" />
   </component>
 </module>

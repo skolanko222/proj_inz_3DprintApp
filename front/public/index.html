@@ -1,63 +1,65 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pl">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Printer Command Sender</title>
-    <!-- Reference local SockJS and StompJS files -->
+    <title>Panel Sterowania Drukarką</title>
+    <link rel="stylesheet" href="style.css">
     <script src="/stomp.js"></script>
+    <script defer src="script.js"></script>
 </head>
 <body>
-    <h1>Send Command to Printer</h1>
-    <form id="commandForm">
-        <label for="printerId">Printer ID:</label>
+    <h1>Panel Sterowania Drukarką</h1>
+    <form id="connectionForm">
+        <label for="printerId">ID Drukarki:</label>
         <input type="text" id="printerId" required>
         <br>
-        <label for="command">Command:</label>
+        <button type="button" id="connectButton">Połącz</button>
+    </form>
+
+    <form id="commandForm">
+        <label for="command">Komenda:</label>
         <input type="text" id="command" required>
         <br>
-        <button type="submit">Send Command</button>
+        <button type="submit">Wyślij Komendę</button>
     </form>
     <p id="response"></p>
 
-    <script>
-        // Connect to the WebSocket endpoint
-        const stompClient = Stomp.client('ws://localhost:8080/ws');
+    <div class="controls">
+        <h2>Sterowanie Temperaturą</h2>
+        <div class="control-item">
+            <input type="checkbox" id="enablePrintbed" />
+            <label class="control-label" for="enablePrintbed">Włącz ogrzewanie stołu</label>
+            <br>
+            <label class="control-label" for="printbedTemp">Temperatura stołu:</label>
+            <input type="range" id="printbedTemp" min="0" max="100" value="0" disabled>
+            <span id="printbedTempValue">0°C</span>
+        </div>
 
-        stompClient.connect({}, function(frame) {
-            console.log('Connected: ' + frame);
+        <div class="control-item">
+            <input type="checkbox" id="enableNozzle" />
+            <label class="control-label" for="enableNozzle">Włącz ogrzewanie dyszy</label>
+            <br>
+            <label class="control-label" for="nozzleTemp">Temperatura dyszy:</label>
+            <input type="range" id="nozzleTemp" min="0" max="250" value="0" disabled>
+            <span id="nozzleTempValue">0°C</span>
+        </div>
+    </div>
 
-            // Subscribe to receive responses from the server
-            stompClient.subscribe('/queue/status', function(message) {
-                console.log('Received response: ' + message.body);
-                document.getElementById('response').innerText = "Received response: " + message.body;
-            });
-        });
-
-        // Send the command to the server when the form is submitted
-        document.getElementById('commandForm').addEventListener('submit', function(event) {
-            event.preventDefault();
-
-            const printerId = document.getElementById('printerId').value;
-            const command = document.getElementById('command').value;
-
-            // Construct the message payload
-            const payload = JSON.stringify({
-                printerId: printerId,
-                command: command
-            });
-            const register = JSON.stringify({
-                printerId: printerId,
-                status: command
-            });
-            //send plain text of printerId to server /app/registerClient
-            stompClient.send('/app/registerClient', {}, register);
-
-            // Send the message to the server at the "/app/command" endpoint
-            stompClient.send('/app/command', {}, payload);
-
-            document.getElementById('response').innerText = "Command sent to printer with ID: " + printerId;
-        });
-    </script>
+    <div id="status-container">
+        <h2>Status Drukarki</h2>
+        <div class="status-item">
+            <span class="status-label">Koordynaty:</span> 
+            <span id="coordinates">N/A</span>
+        </div>
+        <div class="status-item">
+            <span class="status-label">Temperatura stołu:</span> 
+            <span id="tempPrintbed">N/A</span>
+        </div>
+        <div class="status-item">
+            <span class="status-label">Temperatura dyszy:</span> 
+            <span id="tempNozzle">N/A</span>
+        </div>
+    </div>
 </body>
 </html>

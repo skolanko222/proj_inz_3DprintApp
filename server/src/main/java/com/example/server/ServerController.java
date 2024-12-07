@@ -60,14 +60,13 @@ public class ServerController {
         System.out.println("Received status payload: " + statusPayload);
         // Extract printerId and status from the JSON payload
         String printerId = statusPayload.getPrinterId();
-        String status = statusPayload.getStatus();
 
-        if (printerId == null || status == null) {
+        if (printerId == null || statusPayload.getStatus() == null) {
             System.out.println("Invalid payload: printerId and status are required.");
             return;
         }
         // Send the status to the specified client
-        sendStatusToClient(printerId, status);
+        sendStatusToClient(printerId, statusPayload);
 
     }
 
@@ -99,7 +98,7 @@ public class ServerController {
     }
 
     // Method to send a status message to a specific client
-    public void sendStatusToClient(String clientId, String statusMessage) {
+    public void sendStatusToClient(String clientId, StatusPayload statusMessage) {
         String sessionId = clientSesions.get(clientId);
         if (sessionId != null) {
             messagingTemplate.convertAndSend("/queue/status", statusMessage);

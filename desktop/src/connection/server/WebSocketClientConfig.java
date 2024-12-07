@@ -1,19 +1,13 @@
 package connection.server;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.messaging.converter.MappingJackson2MessageConverter;
-import org.springframework.messaging.converter.StringMessageConverter;
 import org.springframework.messaging.simp.stomp.StompCommand;
 import org.springframework.messaging.simp.stomp.StompHeaders;
 import org.springframework.messaging.simp.stomp.StompSession;
 import org.springframework.messaging.simp.stomp.StompSessionHandler;
 import org.springframework.web.socket.client.WebSocketClient;
 import org.springframework.web.socket.client.standard.StandardWebSocketClient;
-import org.springframework.web.socket.config.annotation.EnableWebSocketMessageBroker;
 import org.springframework.web.socket.messaging.WebSocketStompClient;
 import java.lang.reflect.Type;
 
@@ -67,9 +61,20 @@ public class WebSocketClientConfig implements StompSessionHandler {
     }
 
     public void sendStatus() {
+//        {
+//            "printerId": "printer123",
+//                "status": "printing",
+//                "cords": "X:10, Y:20, Z:30",
+//                "tempPrintbed": 60.5,
+//                "tempNozzle": 210.0
+//        }
         StatusPayload payload = new StatusPayload();
         payload.setPrinterId("printer123");
-        payload.setStatus("ready");
+        payload.setStatus("printing");
+        payload.setCords("X:10, Y:20, Z:30");
+        payload.setTempPrintbed(60.5);
+        payload.setTempNozzle(210.0);
+
 
         StompHeaders headers = new StompHeaders();
         headers.setDestination("/app/status");
