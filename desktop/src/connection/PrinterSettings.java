@@ -16,7 +16,7 @@ public class PrinterSettings{
     private String profileName = "Default";
     public static String DEFAULT_SETTINGS = "{\"baudRate\":9600,\"xMin\":0,\"xMax\":200,\"yMin\":0,\"yMax\":220,\"zMin\":0,\"zMax\":150,\"speed\":4800,\"maxTempExt\":260,\"defaultTempExt\":100,\"maxTempBed\":80,\"defaultTempBed\":50,\"checkTempInterval\":5}";
 //    public static String DEFAULT_PROFILE_PATH = "C:\\Users\\Szymon\\Documents\\ProjektyStudia\\proj_inz_3DprintApp\\profiles\\";
-    public static String DEFAULT_PROFILE_PATH = "C:\\Users\\szykol\\Documents\\proj_inz_3DprintApp\\profiles\\";
+    public static String DEFAULT_PROFILE_PATH = "C:\\Users\\Szymon\\Documents\\ProjektyStudia\\proj_inz_3DprintApp\\desktop\\profiles\\";
 
     private Integer baudRate;
     private transient SerialPort serialPort;

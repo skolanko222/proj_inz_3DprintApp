@@ -22,7 +22,7 @@ public class BaseTransmHandler implements DataTransmiterInterface {
     private ConcurrentLinkedDeque<GcodeObject> commandsQueue = new ConcurrentLinkedDeque<GcodeObject>();
     private ConcurrentLinkedDeque<GcodeObject> responsesQueue = new ConcurrentLinkedDeque<GcodeObject>();
     PrinterSettings settings;
-    private MaxListSizeStringListModel responseList = new MaxListSizeStringListModel(50);
+    private MaxListSizeStringListModel responseList = new MaxListSizeStringListModel(50); // max 50 responses
     Thread senderThread;
 
     public int getQueueSize() {
@@ -43,6 +43,7 @@ public class BaseTransmHandler implements DataTransmiterInterface {
     }
     @Override
     public void queueCommand(GcodeObject command) {
+        sender.resume();
         logger.finest("[connection.connect.SerialPortDataSender] Command added to send queue: " + command);
         commandsQueue.add(command);
     }
@@ -98,7 +99,7 @@ public class BaseTransmHandler implements DataTransmiterInterface {
     }
 
 
-    public boolean isQueueEmpty() {
+    public boolean isCommmandQueueEmpty() {
         return commandsQueue.isEmpty();
     }
 

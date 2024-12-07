@@ -129,14 +129,7 @@ public class MainGui extends javax.swing.JFrame {
             int delta = e.getWheelRotation();
             if (delta == 0)
                 return;
-
-//            System.out.println("Mouse wheel rotation -  " + delta* -1);
-
-            if (delta > 0) {
-                renderer.zoom(delta);
-            } else {
-                renderer.zoom(delta );
-            }
+            renderer.zoom(delta);
         });
 
         gcodePreviewPanel.addMouseListener(new MouseAdapter() {
@@ -262,6 +255,10 @@ public class MainGui extends javax.swing.JFrame {
         });
 
         sendCommandButton.setText("Wyślij");
+        sendCommandButton.setPreferredSize(new Dimension(200, sendCommandButton.getPreferredSize().height));
+        sendCommandButton.setMinimumSize(new Dimension(200, sendCommandButton.getPreferredSize().height));
+        sendCommandButton.setMaximumSize(new Dimension(200, sendCommandButton.getPreferredSize().height));
+
         sendCommandButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent evt) {
                 sendCommandButtonActionPerformed(evt);
@@ -269,13 +266,17 @@ public class MainGui extends javax.swing.JFrame {
         });
 
         xyDpadButton.setBackground(new Color(255, 255, 255));
-        xyDpadButton.setIcon(new ImageIcon(getClass().getResource("/Images/d-pad.png"))); // NOI18N
+        xyDpadButton.setIcon(new ImageIcon(getClass().getResource("/Images/home_active_png.png"))); // NOI18N
         xyDpadButton.addMouseListener(new MouseAdapter() {
             public void mouseClicked(MouseEvent evt) {
                 xyDpadButtonMouseClicked(evt);
             }
         });
-        
+
+        JLabel newLabel = new JLabel();
+        newLabel.setIcon(new ImageIcon(getClass().getResource("/Images/e_active_png.png"))); // NOI18N
+
+
         GroupLayout jPanel1Layout = new GroupLayout(jPanel1);
         jPanel1.setLayout(jPanel1Layout);
 
@@ -287,11 +288,14 @@ public class MainGui extends javax.swing.JFrame {
                                         .addGroup(jPanel1Layout.createSequentialGroup()
                                                 .addComponent(commandLine)
                                                 .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
-                                                .addComponent(sendCommandButton, GroupLayout.PREFERRED_SIZE, 61, GroupLayout.PREFERRED_SIZE))
+                                                .addComponent(sendCommandButton, GroupLayout.PREFERRED_SIZE, 90, GroupLayout.PREFERRED_SIZE))
                                         .addGroup(jPanel1Layout.createSequentialGroup()
                                                 .addGroup(jPanel1Layout.createParallelGroup(GroupLayout.Alignment.LEADING)
                                                         .addComponent(connectButton)
-                                                        .addComponent(xyDpadButton))
+                                                        .addGroup(jPanel1Layout.createSequentialGroup()
+                                                                .addComponent(xyDpadButton)
+                                                                .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
+                                                                .addComponent(newLabel)))
                                                 .addGap(0, 0, Short.MAX_VALUE)))
                                 .addContainerGap(GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
                         .addGroup(jPanel1Layout.createSequentialGroup()
@@ -322,7 +326,9 @@ public class MainGui extends javax.swing.JFrame {
                                         .addComponent(sendCommandButton)
                                         .addComponent(commandLine, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE))
                                 .addGap(28, 28, 28)
-                                .addComponent(xyDpadButton)
+                                .addGroup(jPanel1Layout.createParallelGroup(GroupLayout.Alignment.LEADING)
+                                        .addComponent(xyDpadButton)
+                                        .addComponent(newLabel))
                                 .addGap(34, 34, 34)
                                 .addGroup(jPanel1Layout.createParallelGroup(GroupLayout.Alignment.BASELINE)
                                         .addComponent(extTempCheckBox)
@@ -884,6 +890,9 @@ public class MainGui extends javax.swing.JFrame {
         rangeLayerCheckBox.setEnabled(isFileLoaded);
         idleMoveCheckBox.setEnabled(isFileLoaded);
         idleMoveCheckBox.setSelected(false);
+        //set rotation to 0
+        if(renderer != null)
+            renderer.setRotation(new Point(0, -90, -90));
         focus();
     }
 
