@@ -7,21 +7,21 @@ import gcode.GcodeObject;
 import java.util.logging.Logger;
 
 
-public class SerialPortDataSender implements Runnable, SerialPortDataListener {
+public class SerialPortDataControler implements Runnable, SerialPortDataListener {
     private final SerialPort serialPort;
     private final DataTransmiterInterface transmHandler;
-    private static final Logger logger = Logger.getLogger(SerialPortDataSender.class.getName());
+    private static final Logger logger = Logger.getLogger(SerialPortDataControler.class.getName());
     private final Object lock = new Object();
     private boolean pause = false;
 
-    public SerialPortDataSender(SerialPort serialPort, DataTransmiterInterface transmHandler) {
+    public SerialPortDataControler(SerialPort serialPort, DataTransmiterInterface transmHandler) {
         if(serialPort == null){
             throw new NullPointerException("SerialPort is null");
         }
         this.serialPort = serialPort;
         this.transmHandler = transmHandler;
     }
-    void send() {
+    private void send() {
         GcodeObject data = transmHandler.dequeueCommand();
         logger.finest("Sending data via serial port: " + data);
         serialPort.writeBytes(data.getCommand().getBytes(), data.getCommand().getBytes().length);
@@ -44,7 +44,7 @@ public class SerialPortDataSender implements Runnable, SerialPortDataListener {
     }
 
     private void handleReceivedData(byte[] buffer, int len) {
-        GcodeObject response = transmHandler.dequeueResponse();
+        GcodeObject response = transmHandler.dequeueResponse(); // komenda do której przypisujemy odpowiedź
         String receivedData = new String(buffer, 0, len);
         response.setResponse(receivedData); // parowanie odpowiedzi drukarki z komendą pobraną z kolejki
         if(response.isResponse())
@@ -87,7 +87,7 @@ public class SerialPortDataSender implements Runnable, SerialPortDataListener {
                     try {
                         lock.wait();  // Wątek czeka, aż zostanie powiadomiony
                     } catch (InterruptedException e) {
-                        e.printStackTrace();
+                        logger.info("Sender thread interrupted");
                     }
                 }
             }

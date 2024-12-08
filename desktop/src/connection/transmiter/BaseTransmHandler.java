@@ -3,9 +3,9 @@ package connection.transmiter;
 import com.fazecast.jSerialComm.*;
 import com.mycompany.gui_proj_inz.utils.MaxListSizeStringListModel;
 import connection.ControlPrinter;
+import connection.connect.SerialPortDataControler;
 import gcode.GcodeObject;
 import connection.PrinterSettings;
-import connection.connect.SerialPortDataSender;
 
 import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.logging.FileHandler;
@@ -17,7 +17,7 @@ public class BaseTransmHandler implements DataTransmiterInterface {
 
     // flag is true when command is sent and waits for "ok" from printer, changes to false when "ok" is received
     private SerialPort chosenPort;
-    private SerialPortDataSender sender;
+    private SerialPortDataControler sender;
     private ControlPrinter printer;
     private ConcurrentLinkedDeque<GcodeObject> commandsQueue = new ConcurrentLinkedDeque<GcodeObject>();
     private ConcurrentLinkedDeque<GcodeObject> responsesQueue = new ConcurrentLinkedDeque<GcodeObject>();
@@ -62,7 +62,7 @@ public class BaseTransmHandler implements DataTransmiterInterface {
 
     public BaseTransmHandler(PrinterSettings settings) throws Exception {
         chosenPort = settings.getSerialPort();
-        sender = new SerialPortDataSender(chosenPort, this);
+        sender = new SerialPortDataControler(chosenPort, this);
         senderThread = new Thread(sender);
         this.settings = settings;
 
